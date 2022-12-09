@@ -1,0 +1,100 @@
+name: lighting-tapo
+version: "0.1"
+summary: Matter Bridge for Tapo smart light/plug
+description: |
+  This is year 2022 and TP-Link Tapo devices aren't yet Matter-ready.
+  
+  This app can be used to turn a Tapo device into a Matter device.
+license: Apache-2.0
+confinement: strict
+base: core22
+grade: devel
+
+architectures:
+  - build-on: amd64
+  - build-on: arm64
+
+parts:
+  connectedhomeip:
+    plugin: nil
+    override-build: |      
+      git clone https://github.com/project-chip/connectedhomeip.git --depth=1 .
+      scripts/checkout_submodules.py --shallow --platform linux
+
+      set +u # do not treat unset variables as error
+      # Setup the compilation environment
+      source scripts/activate.sh
+
+      # Python setup
+      ./scripts/build_python_device.sh --chip_detail_logging true
+      source out/python_env/bin/activate
+
+      # This is needed for the bridge. Install it here since the venv is active.
+      pip install PyP100
+
+      sed 's/^VIRTUAL_ENV=.*/VIRTUAL_ENV="\$SNAP\/connectedhomeip\/python_env"/' \
+        out/python_env/bin/activate > out/python_env/bin/activate_snap
+
+      mkdir -p $CRAFT_PART_INSTALL/connectedhomeip
+      cp -r out/. $CRAFT_PART_INSTALL/connectedhomeip
+    build-packages:
+      - git
+      - gcc
+      - g++
+      - pkg-config
+      - libssl-dev
+      - libdbus-1-dev
+      - libglib2.0-dev
+      - libavahi-client-dev
+      - ninja-build
+      - python3-venv
+      - python3-dev
+      - python3-pip
+      - unzip
+      - libgirepository1.0-dev
+      - libcairo2-dev
+      - libreadline-dev
+      - generate-ninja
+    # stage:
+    #   - -tests
+    #   - -gen
+    #   - -protocol_buffer
+    #   # - -python
+    #   # - -python-venv
+    #   - -*.ninja
+    #   - -*.map
+
+  tapo-bridge:
+    after: [connectedhomeip]
+    plugin: python
+    source: .
+    # python-requirements: requirements.txt
+    # python-packages:
+    #   - PyP100
+    # build-packages:
+    #   - python3-pip
+    override-build: |
+      ls -l
+      pwd
+
+      # source $SNAPCRAFT_STAGE/connectedhomeip/python_env/bin/activate_snap
+      # pip install -r requirements.txt
+
+      mkdir -p $CRAFT_PART_INSTALL/bin
+      cp run.sh $CRAFT_PART_INSTALL/bin/
+      cp lighting.py $CRAFT_PART_INSTALL/bin/
+      
+    stage-packages:
+      - python3
+      - python3-venv
+      # - python-is-python3
+      - python3-pip
+
+
+apps:
+  tapo-bridge:
+    daemon: simple
+    command: bin/run.sh
+    plugs:
+      - network
+      - bluez
