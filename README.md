@@ -1,5 +1,9 @@
 # Tapo Matter Bridge
+This is year 2022 and TP-Link Tapo devices aren't yet Matter-ready.
 
+This app is a Matter bridge which can be used to turn the Tapo L530E into a Matter device.
+
+The bridge communicates with a single, pre-commissioned Tapo device over WiFi.
 ## Snap
 ### Build and install
 ```bash
