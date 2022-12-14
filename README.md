@@ -30,16 +30,11 @@ sudo snap logs -f matter-bridge-tapo-l530
 
 ## Run natively
 
-Assuming you have setup the connected home IP project for Python projects at `../connectedhomeip`:
+Assuming you have setup the Connected Home IP project for Python projects (see [Development](#development)) at `../connectedhomeip`:
 
 Activate the Python env:
 ```bash
 source ../connectedhomeip/out/python_env/bin/activate
-```
-
-Install Python dependencies:
-```bash
-pip install -r build/requirements.txt
 ```
 
 Run the Python script:
@@ -104,3 +99,39 @@ Color temperature:
 chip-tool colorcontrol move-to-color-temperature 3000 0 0 0 110 1
 ```
 -->
+
+## Development
+
+Assuming you have Ubuntu 22.04 and Python 3.10, install the following
+dependencies:
+
+### Dependencies
+```
+sudo apt install git gcc g++ libdbus-1-dev \
+  ninja-build python3-venv python3-dev \
+  python3-pip libgirepository1.0-dev libcairo2-dev
+# maybe:
+# sudo apt install pkg-config libssl-dev libglib2.0-dev libavahi-client-dev libreadline-dev
+```
+
+### Installation
+
+Shallow clone the Connected Home IP project:
+```bash
+git clone https://github.com/project-chip/connectedhomeip.git --depth=1
+cd ~/connectedhomeip/
+scripts/checkout_submodules.py --shallow --platform linux
+```
+
+Build the Python/C libraries:
+```bash
+source ./scripts/activate.sh
+./scripts/build_python_device.sh --chip_detail_logging true
+```
+
+Activate the Python env and install the dependencies inside it:
+
+```bash
+source ./out/python_env/bin/activate
+pip install -r build/requirements.txt
+```
