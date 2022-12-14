@@ -1,19 +1,19 @@
 # Tapo Matter Bridge
 
-## Build and install
+## Snap
+### Build and install
 ```bash
 snapcraft -v
 snap install --dangerous ./matter-bridge-tapo-l530_0.1_amd64.snap
 ```
-
-## Configure
+### Configure
 ```bash
 snap set matter-bridge-tapo-l530 ip="tapo device ip"
 snap set matter-bridge-tapo-l530 user="tapo user"
 snap set matter-bridge-tapo-l530 password="tapo password"
 ```
 
-# Connect interfaces
+### Connect interfaces
 ```bash
 snap connect matter-bridge-tapo-l530:avahi-control
 ```
@@ -21,30 +21,29 @@ snap connect matter-bridge-tapo-l530:avahi-control
 The [avahi-control](https://snapcraft.io/docs/avahi-control-interface) is necessary to allow discovery of the application via DNS-SD.
 To make this work, the host also needs to have a running avahi-daemon which can be installed with `sudo apt install avahi-daemon` or `snap install avahi`.
 
-
-## Run snap
+### Run
 ```bash
 sudo snap start matter-bridge-tapo-l530
 sudo snap logs -f matter-bridge-tapo-l530
 ```
 
-## Run natively
+## Native
 
 Assuming you have setup the Connected Home IP project for Python projects (see [Development](#development)) at `../connectedhomeip`:
 
-Activate the Python env:
+### Activate the Python env
 ```bash
 source ../connectedhomeip/out/python_env/bin/activate
 ```
 
-Run the Python script:
+### Run
 ```bash
 IP="tapo device IP" USER="tapo user" PASSWORD="tapo password" python lighting.py
 ```
 
 ## Control with Chip Tool
 
-Commissioning:
+### Commissioning
 
 ```bash
 chip-tool pairing ethernet 110 20202021 3840 192.168.1.111 5540
@@ -63,6 +62,8 @@ Alternatively, to commission with discovery which works with DNS-SD:
 ```bash
 chip-tool pairing onnetwork 110 20202021
 ```
+
+### Command
 
 Switching on/off:
 
