@@ -26,14 +26,13 @@ from chip.server import (
 
 from chip.exceptions import ChipStackError
 
-
+from threading import Event
 import os
-import asyncio
 
 from PyP100 import PyL530
 
 dev = None
-color = {}
+dev_state = None
 switchedOn = None
 
 
@@ -41,7 +40,7 @@ def switch_on():
     global dev
     global switchedOn
 
-    print("[tapo] switch on")
+    print("[tapo] {}: switch on".format(dev.ipAddress))
     dev.turnOn()
     switchedOn = True
 
@@ -50,7 +49,7 @@ def switch_off():
     global dev
     global switchedOn
 
-    print("[tapo] switch off")
+    print("[tapo] {}: switch off".format(dev.ipAddress))
     dev.turnOff()
     switchedOn = False
 
@@ -62,21 +61,36 @@ def set_level(level: int):
     # The level setting is stored and resubmitted with every on/off command.
     # Skip when off or unknown, because setting level turns on the Tapo light.
     if switchedOn or switchedOn is None:
-        print("[tapo] set brightness level")
+        print("[tapo] {}: set brightness level".format(dev.ipAddress))
         dev.setBrightness(level)
 
 
-def set_color(level: dict):
+def set_hue(hue: int):
     global dev
+    global dev_state
 
-    print("[tapo] set color")
-    dev.setColor(level['hue'], level['saturation'])
+    dev_state['hue'] = hue
+    saturation = dev_state['saturation']
+
+    print("[tapo] {}: set color {}, {}".format(dev.ipAddress, hue, saturation))
+    dev.setColor(hue, saturation)
+
+
+def set_saturation(saturation: int):
+    global dev
+    global dev_state
+
+    dev_state['saturation'] = saturation
+    hue = dev_state['hue']
+
+    print("[tapo] {}: set color {}, {}".format(dev.ipAddress, hue, saturation))
+    dev.setColor(hue, saturation)
 
 
 def set_color_temperature(kelvin: int):
     global dev
 
-    print("[tapo] set color temperature")
+    print("[tapo] {}: set color temperature".format(dev.ipAddress))
     dev.setColorTemp(kelvin)
 
 
@@ -109,21 +123,20 @@ def attributeChangeCallback(
         # color
         elif clusterId == 768:
             if value:
-                global color
+                global dev_state
+                # hue
                 if attributeId == 0:
                     print("[callback] color hue={}".format(value[0]))
-                    color['hue'] = value[0]
+                    set_hue(value[0])
+                # saturation
                 elif attributeId == 1:
                     print("[callback] color saturation={}".format(value[0]))
-                    color['saturation'] = value[0]
+                    set_saturation(value[0])
+                # temperature
                 elif attributeId == 7:
                     print("[callback] color temperature={}".format(value[0]))
                     set_color_temperature(value[0])
 
-                # we need both hue and saturation to set a new color
-                if (attributeId == 0 or attributeId == 1) and 'hue' in color and 'saturation' in color:
-                    print("[callback] color={}".format(color))
-                    set_color(color)
         else:
             print("[callback] Error: unhandled cluster {} or attribute {}".format(
                 clusterId, attributeId))
@@ -132,34 +145,27 @@ def attributeChangeCallback(
         print("[callback] Error: unhandled endpoint {} ".format(endpoint))
 
 
-class Lighting:
-    def __init__(self):
-        self.chipLib = GetLibraryHandle(attributeChangeCallback)
-
-
 if __name__ == "__main__":
-    l = Lighting()
-
     print("Starting Tapo Bridge Lighting App")
 
     ip = os.environ['IP']
     user = os.environ['USER']
-    password = os.environ['PASS']
+    password = os.environ['PASSWORD']
 
     dev = PyL530.L530(ip, user, password)
+    print(user, password)
 
-    print("[tapo] handshake")
+    print("[tapo] {}: handshake".format(ip))
     dev.handshake()
-    print("[tapo] login")
+    print("[tapo] {}: login".format(ip))
     dev.login()
+    print("[tapo] {}: ready ✅".format(ip))
 
-    print("[tapo] ready")
+    info = dev.getDeviceInfo()
+    dev_state = info['result']['default_states']['state']
+    print("[tapo] Device state:", dev_state)
 
-    loop = asyncio.get_event_loop()
-    try:
-        loop.run_forever()
-    except KeyboardInterrupt:
-        print("Process interrupted")
-    finally:
-        loop.close()
-        print("Shutting down")
+    chipHandler = GetLibraryHandle(attributeChangeCallback)
+
+    print('🚀 Ready...')
+    Event().wait()
