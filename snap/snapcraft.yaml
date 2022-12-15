@@ -74,7 +74,7 @@ parts:
       - libreadline-dev
       - generate-ninja
 
-  tapo-bridge:
+  lighting-gpio:
     after: [connectedhomeip]
     plugin: dump
     source: .
@@ -88,7 +88,7 @@ parts:
       - python3-venv
 
 apps:
-  tapo-bridge:
+  lighting-gpio:
     daemon: simple
     install-mode: disable
     restart-delay: 10s
@@ -98,3 +98,4 @@ apps:
       - network-bind
       - bluez
       - avahi-control
+      - gpio # not connected automatically
