@@ -1,4 +1,4 @@
-name: matter-bridge-tapo-l530
+name: matter-lighting-gpio
 version: "0.1"
 summary: Matter Bridge for Tapo L530E multi-color light bulb
 description: |
@@ -47,7 +47,7 @@ parts:
       ./scripts/build_python_device.sh --chip_detail_logging true
       source out/python_env/bin/activate
 
-      # This is needed for the bridge. Install it here since the venv is active.
+      # This is needed for the gpio. Install it here since the venv is active.
       pip install -r $CRAFT_STAGE/requirements.txt
 
       sed 's/^VIRTUAL_ENV=.*/VIRTUAL_ENV="\$SNAP\/connectedhomeip\/python_env"/' \
@@ -81,7 +81,7 @@ parts:
     override-build: |
       mkdir -p $CRAFT_PART_INSTALL/bin $CRAFT_PART_INSTALL/etc
       cp run.sh $CRAFT_PART_INSTALL/bin/
-      cp lighting.py $CRAFT_PART_INSTALL/bin/
+      cp lighting-gpio.py $CRAFT_PART_INSTALL/bin/
       
     stage-packages:
       - python3
