@@ -14,85 +14,31 @@
 #    limitations under the License.
 #
 
-# To run, execute the following inside the Python Virtual Env:
-# pip install PyP100
-# IP="" USER="" PASS="" python lighting.py
-
 from chip.server import (
     GetLibraryHandle,
-    NativeLibraryHandleMethodArguments,
     PostAttributeChangeCallback,
 )
 
-from chip.exceptions import ChipStackError
-
-from threading import Event
 import os
+import sys
 
-from PyP100 import PyL530
+from gpiozero import LED
 
-dev = None
-dev_state = None
 switchedOn = None
 
 
 def switch_on():
-    global dev
     global switchedOn
 
-    print("[tapo] {}: switch on".format(dev.ipAddress))
-    dev.turnOn()
-    switchedOn = True
+    print("[LED] switch on")
+    led.on()
 
 
 def switch_off():
-    global dev
     global switchedOn
 
-    print("[tapo] {}: switch off".format(dev.ipAddress))
-    dev.turnOff()
-    switchedOn = False
-
-
-def set_level(level: int):
-    global dev
-    global switchedOn
-
-    # The level setting is stored and resubmitted with every on/off command.
-    # Skip when off or unknown, because setting level turns on the Tapo light.
-    if switchedOn or switchedOn is None:
-        print("[tapo] {}: set brightness level".format(dev.ipAddress))
-        dev.setBrightness(level)
-
-
-def set_hue(hue: int):
-    global dev
-    global dev_state
-
-    dev_state['hue'] = hue
-    saturation = dev_state['saturation']
-
-    print("[tapo] {}: set color {}, {}".format(dev.ipAddress, hue, saturation))
-    dev.setColor(hue, saturation)
-
-
-def set_saturation(saturation: int):
-    global dev
-    global dev_state
-
-    dev_state['saturation'] = saturation
-    hue = dev_state['hue']
-
-    print("[tapo] {}: set color {}, {}".format(dev.ipAddress, hue, saturation))
-    dev.setColor(hue, saturation)
-
-
-def set_color_temperature(kelvin: int):
-    global dev
-
-    print("[tapo] {}: set color temperature".format(dev.ipAddress))
-    dev.setColorTemp(kelvin)
-
+    print("[LED] switch off")
+    led.off()
 
 @PostAttributeChangeCallback
 def attributeChangeCallback(
@@ -115,28 +61,6 @@ def attributeChangeCallback(
 
                 print("[callback] light off")
                 switch_off()
-        # level (brightness)
-        elif clusterId == 8 and attributeId == 0:
-            if value:
-                print("[callback] level {}".format(value[0]))
-                set_level(value[0])
-        # color
-        elif clusterId == 768:
-            if value:
-                global dev_state
-                # hue
-                if attributeId == 0:
-                    print("[callback] color hue={}".format(value[0]))
-                    set_hue(value[0])
-                # saturation
-                elif attributeId == 1:
-                    print("[callback] color saturation={}".format(value[0]))
-                    set_saturation(value[0])
-                # temperature
-                elif attributeId == 7:
-                    print("[callback] color temperature={}".format(value[0]))
-                    set_color_temperature(value[0])
-
         else:
             print("[callback] Error: unhandled cluster {} or attribute {}".format(
                 clusterId, attributeId))
@@ -145,27 +69,15 @@ def attributeChangeCallback(
         print("[callback] Error: unhandled endpoint {} ".format(endpoint))
 
 
-if __name__ == "__main__":
-    print("Starting Tapo Bridge Lighting App")
+class Lighting:
+    def __init__(self):
+        self.chipLib = GetLibraryHandle(attributeChangeCallback)
 
-    ip = os.environ['IP']
-    user = os.environ['USER']
-    password = os.environ['PASSWORD']
+gpio=os.environ['GPIO']
+led = LED(gpio)
 
-    dev = PyL530.L530(ip, user, password)
-    print(user, password)
+l = Lighting()
+print('🚀 Ready...')
 
-    print("[tapo] {}: handshake".format(ip))
-    dev.handshake()
-    print("[tapo] {}: login".format(ip))
-    dev.login()
-    print("[tapo] {}: ready ✅".format(ip))
-
-    info = dev.getDeviceInfo()
-    dev_state = info['result']['default_states']['state']
-    print("[tapo] Device state:", dev_state)
-
-    chipHandler = GetLibraryHandle(attributeChangeCallback)
-
-    print('🚀 Ready...')
-    Event().wait()
+input('Press enter to quit')
+sys.exit(0)
