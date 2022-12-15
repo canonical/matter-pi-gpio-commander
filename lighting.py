@@ -24,9 +24,6 @@ import sys
 
 from gpiozero import LED
 
-switchedOn = None
-
-
 def switch_on():
     global switchedOn
 
