@@ -6,25 +6,30 @@ The lighting device communicates with others over WiFi/Ethernet.
 ### Build and install
 ```bash
 snapcraft -v
-snap install --dangerous ./matter-lighting-gpio_0.1_arm64.snap
+snap install --dangerous ./matter-pi-gpio-commander_0.1_arm64.snap
 ```
 ### Configure
 ```bash
-snap set matter-lighting-gpio gpio=17
+snap set matter-pi-gpio-commander gpio=17
 ```
 
 ### Connect interfaces
 ```bash
-snap connect matter-lighting-gpio:avahi-control
+snap connect matter-pi-gpio-commander:avahi-control
 ```
 
 The [avahi-control](https://snapcraft.io/docs/avahi-control-interface) is necessary to allow discovery of the application via DNS-SD.
 To make this work, the host also needs to have a running avahi-daemon which can be installed with `sudo apt install avahi-daemon` or `snap install avahi`.
 
+```bash
+snap connect edgex-device-gpio:gpio pi:bcm-gpio-17
+```
+The [gpio interface](https://snapcraft.io/docs/gpio-interface) is not connected automatically. The above example is to connect GPIO-17.
+
 ### Run
 ```bash
-sudo snap start matter-lighting-gpio
-sudo snap logs -f matter-lighting-gpio
+sudo snap start matter-pi-gpio-commander
+sudo snap logs -f matter-pi-gpio-commander
 ```
 
 ## Native
