@@ -1,25 +1,21 @@
-# Tapo Matter Bridge
-This is year 2022 and TP-Link Tapo devices aren't yet Matter-ready.
+# Matter Pi GPIO Commander
+This app is a Matter lighting device which can be used to control LED using Raspberry Pi's GPIO pin.
 
-This app is a Matter bridge which can be used to turn the Tapo L530E into a Matter device.
-
-The bridge communicates with a single, pre-commissioned Tapo device over WiFi.
+The lighting device communicates with others over WiFi/Ethernet.
 ## Snap
 ### Build and install
 ```bash
 snapcraft -v
-snap install --dangerous ./matter-bridge-tapo-l530_0.1_amd64.snap
+snap install --dangerous ./matter-lighting-gpio_0.1_arm64.snap
 ```
 ### Configure
 ```bash
-snap set matter-bridge-tapo-l530 ip="tapo device ip"
-snap set matter-bridge-tapo-l530 user="tapo user"
-snap set matter-bridge-tapo-l530 password="tapo password"
+snap set matter-lighting-gpio gpio=17
 ```
 
 ### Connect interfaces
 ```bash
-snap connect matter-bridge-tapo-l530:avahi-control
+snap connect matter-lighting-gpio:avahi-control
 ```
 
 The [avahi-control](https://snapcraft.io/docs/avahi-control-interface) is necessary to allow discovery of the application via DNS-SD.
@@ -27,8 +23,8 @@ To make this work, the host also needs to have a running avahi-daemon which can 
 
 ### Run
 ```bash
-sudo snap start matter-bridge-tapo-l530
-sudo snap logs -f matter-bridge-tapo-l530
+sudo snap start matter-lighting-gpio
+sudo snap logs -f matter-lighting-gpio
 ```
 
 ## Native
@@ -42,7 +38,7 @@ source ../connectedhomeip/out/python_env/bin/activate
 
 ### Run
 ```bash
-IP="tapo device IP" USER="tapo user" PASSWORD="tapo password" python lighting.py
+GPIO=17 python lighting.py
 ```
 
 ## Control with Chip Tool
@@ -56,10 +52,10 @@ chip-tool pairing ethernet 110 20202021 3840 192.168.1.111 5540
 where:
 
 -   `110` is the assigned node id
--   `20202021` is the pin code for the bridge app
+-   `20202021` is the pin code for the lighting app
 -   `3840` is the discriminator id
--   `192.168.1.111` is the IP address of the host for the bridge
--   `5540` the the port for the bridge
+-   `192.168.1.111` is the IP address of the host for the lighting app
+-   `5540` the the port for the lighting app
 
 Alternatively, to commission with discovery which works with DNS-SD:
 
@@ -81,29 +77,10 @@ where:
 
 -   `onoff` is the matter cluster name
 -   `on`/`off`/`toggle` is the command name. The `toggle` command is RECOMMENDED
-    because it is stateless. The bridge does not synchronize the actual state of
+    because it is stateless. The lighting app does not synchronize the actual state of
     devices.
--   `110` is the node id of the bridge app assigned during the commissioning
+-   `110` is the node id of the lighting app assigned during the commissioning
 -   `1` is the endpoint of the configured device
-
-Level control:
-```bash
-chip-tool levelcontrol move-to-level 100 0 0 0 110 1
-```
-
-Color control:
-```bash
-chip-tool colorcontrol move-to-hue 50 0 0 0 0 110 1
-chip-tool colorcontrol move-to-saturation 60 0 0 0 110 1
-chip-tool colorcontrol move-to-hue-and-saturation 50 60 0 0 0 110 1
-```
-
-<!--
-Color temperature:
-```bash
-chip-tool colorcontrol move-to-color-temperature 3000 0 0 0 110 1
-```
--->
 
 ## Development
 

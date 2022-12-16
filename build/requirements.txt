@@ -1,1 +1,1 @@
-PyP100
+gpiozero
