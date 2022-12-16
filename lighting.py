@@ -76,5 +76,8 @@ led = LED(gpio)
 l = Lighting()
 print('🚀 Ready...')
 
-input('Press enter to quit')
-sys.exit(0)
+try:
+    input('Press enter to quit')
+    sys.exit(0)
+except EOFError as e:
+    print(e)
