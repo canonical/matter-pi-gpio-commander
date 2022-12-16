@@ -81,7 +81,7 @@ parts:
     override-build: |
       mkdir -p $CRAFT_PART_INSTALL/bin $CRAFT_PART_INSTALL/etc
       cp run.sh $CRAFT_PART_INSTALL/bin/
-      cp lighting-gpio.py $CRAFT_PART_INSTALL/bin/
+      cp lighting.py $CRAFT_PART_INSTALL/bin/
       
     stage-packages:
       - python3
