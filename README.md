@@ -22,7 +22,7 @@ The [avahi-control](https://snapcraft.io/docs/avahi-control-interface) is necess
 To make this work, the host also needs to have a running avahi-daemon which can be installed with `sudo apt install avahi-daemon` or `snap install avahi`.
 
 ```bash
-snap connect edgex-device-gpio:gpio pi:bcm-gpio-17
+snap connect matter-pi-gpio-commander:gpio pi:bcm-gpio-17
 ```
 The [gpio interface](https://snapcraft.io/docs/gpio-interface) is not connected automatically. The above example is to connect GPIO-17.
 
