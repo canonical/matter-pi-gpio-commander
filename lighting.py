@@ -19,8 +19,8 @@ from chip.server import (
     PostAttributeChangeCallback,
 )
 
+from threading import Event
 import os
-import sys
 
 from gpiozero import LED
 
@@ -76,8 +76,4 @@ led = LED(gpio)
 l = Lighting()
 print('🚀 Ready...')
 
-try:
-    input('Press enter to quit')
-    sys.exit(0)
-except EOFError as e:
-    print(e)
+Event().wait()
