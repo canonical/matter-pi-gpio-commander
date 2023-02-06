@@ -2,29 +2,61 @@
 This app is a Matter lighting device which can be used to control LED using Raspberry Pi's GPIO pin.
 
 The lighting device communicates with others over WiFi/Ethernet.
-## Snap
-### Build and install
+
+## Build
 ```bash
 snapcraft -v
-snap install --dangerous ./matter-pi-gpio-commander_0.1_arm64.snap
 ```
+This will download >500MB and requires around 8GB of disk space. 
+
+## Install
+```bash
+snap install --dangerous *.snap
+```
+For installing on a classic Ubuntu or any other Linux distro with snap confinement, add `--devmode`. Refer to [GPIO Access](GPIO.md) for details.
+
 ### Configure
+> note
+> TODO: The pin is currently hardcoded to Pin 7.
+
 ```bash
 snap set matter-pi-gpio-commander gpio=17
 ```
 
 ### Connect interfaces
-```bash
-snap connect matter-pi-gpio-commander:avahi-control
-```
-
 The [avahi-control](https://snapcraft.io/docs/avahi-control-interface) is necessary to allow discovery of the application via DNS-SD.
 To make this work, the host also needs to have a running avahi-daemon which can be installed with `sudo apt install avahi-daemon` or `snap install avahi`.
 
 ```bash
-snap connect matter-pi-gpio-commander:gpio pi:bcm-gpio-17
+snap connect matter-pi-gpio-commander:avahi-control
 ```
-The [gpio interface](https://snapcraft.io/docs/gpio-interface) is not connected automatically. The above example is to connect GPIO-17.
+
+The `gpio` interface provides slots for each GPIO channel. The slots can be listed using:
+```bash
+$ sudo snap interface gpio
+name:    gpio
+summary: allows access to specific GPIO pin
+plugs:
+  - matter-pi-gpio-commander
+slots:
+  - pi:bcm-gpio-0
+  - pi:bcm-gpio-1
+  - pi:bcm-gpio-10
+  ...
+```
+
+The slots are not connected automatically. For example, to connect GPIO-7:
+```bash
+snap connect matter-pi-gpio-commander:gpio pi:bcm-gpio-7
+```
+
+Check the list of connections:
+```
+$ sudo snap connections
+Interface        Plug                            Slot              Notes
+gpio             matter-pi-gpio-commander:gpio   pi:bcm-gpio-7     manual
+…
+
 
 ### Run
 ```bash
@@ -32,26 +64,12 @@ sudo snap start matter-pi-gpio-commander
 sudo snap logs -f matter-pi-gpio-commander
 ```
 
-## Native
-
-Assuming you have setup the Connected Home IP project for Python projects (see [Development](#development)) at `../connectedhomeip`:
-
-### Activate the Python env
-```bash
-source ../connectedhomeip/out/python_env/bin/activate
-```
-
-### Run
-```bash
-GPIO=17 python lighting.py
-```
-
 ## Control with Chip Tool
 
 ### Commissioning
 
 ```bash
-chip-tool pairing ethernet 110 20202021 3840 192.168.1.111 5540
+sudo chip-tool pairing ethernet 110 20202021 3840 192.168.1.111 5540
 ```
 
 where:
@@ -65,7 +83,7 @@ where:
 Alternatively, to commission with discovery which works with DNS-SD:
 
 ```bash
-chip-tool pairing onnetwork 110 20202021
+sudo chip-tool pairing onnetwork 110 20202021
 ```
 
 ### Command
@@ -73,9 +91,9 @@ chip-tool pairing onnetwork 110 20202021
 Switching on/off:
 
 ```bash
-chip-tool onoff toggle 110 1 # toggle is stateless and recommended
-chip-tool onoff on 110 1
-chip-tool onoff off 110 1
+sudo chip-tool onoff toggle 110 1 # toggle is stateless and recommended
+sudo chip-tool onoff on 110 1
+sudo chip-tool onoff off 110 1
 ```
 
 where:
