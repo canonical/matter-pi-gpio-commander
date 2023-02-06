@@ -10,7 +10,7 @@ base: core22
 architectures:
   - build-on: arm64
   - build-on: armhf
-  - build-on: amd64
+  # - build-on: amd64
 
 layout:
   /mnt:
@@ -52,6 +52,7 @@ parts:
   lighting:
     after: [wiring-pi, connectedhomeip]
     plugin: nil
+    source: app
     override-build: |
       cd ../../connectedhomeip/src
 
@@ -60,18 +61,23 @@ parts:
       # Replace key-value store path:
       sed -i 's/\/tmp/\/mnt/g' src/platform/Linux/CHIPPlatformConfig.h
 
-      # to avoid activation errors, don't treat unset variables as error
-      set +u 
-
+      # To avoid unrelated activation errors, don't treat unset variables as error
+      set +u
       source scripts/activate.sh
+      set -u
       
       cd examples/lighting-app/linux/
+
+      # Copy and replace the application files
+      cp -vr $CRAFT_PART_BUILD/* .
+
       gn gen out/build
       ninja -C out/build
-      set -u
 
+      ldd out/build/chip-lighting-app
+      
       mkdir -p $CRAFT_PART_INSTALL/bin
-      cp ./out/build/chip-lighting-app $CRAFT_PART_INSTALL/bin/lighting-app        
+      cp out/build/chip-lighting-app $CRAFT_PART_INSTALL/bin/lighting-app        
     build-packages:
       - git
       - gcc
@@ -110,4 +116,3 @@ apps:
     command: bin/test-blink
     plugs:
       - gpio
-
