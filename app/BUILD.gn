@@ -92,7 +92,7 @@ executable("chip-lighting-app") {
   } else {
     # The system_rpc_server.cc file is in pigweed and doesn't compile with
     # -Wconversion, remove check for RPC build only.
-    cflags = [ "-Wconversion","-shared"]
+    cflags = [ "-Wconversion" ]
   }
 
   libs = [ "wiringPi" ]
