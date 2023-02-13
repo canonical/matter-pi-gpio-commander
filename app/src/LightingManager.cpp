@@ -40,7 +40,7 @@ CHIP_ERROR LightingManager::Init()
         exit(-1);
         // TODO: return an appropriate and fatal error
     }
-    ChipLogProgress(AppServer, "Wiring Pi PIN number: %s", envWiringPiPin);
+    ChipLogProgress(AppServer, "WiringPi pin number: %s", envWiringPiPin);
 
     wiringPiPin = std::stoi(envWiringPiPin);
 

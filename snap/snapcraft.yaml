@@ -34,7 +34,7 @@ parts:
     plugin: nil
     source: .
     override-build: |
-      g++ -Wall -o test-blink test-blink.cpp -lwiringPi
+      g++ -Wall test-blink.cpp -lwiringPi
       mkdir -p $CRAFT_PART_INSTALL/bin
       cp test-blink $CRAFT_PART_INSTALL/bin/
   
@@ -103,10 +103,13 @@ parts:
     override-build: |
       mkdir -p $CRAFT_PART_INSTALL/bin
       cp -v run.sh $CRAFT_PART_INSTALL/bin/
+      cp -v load-snap-options.sh $CRAFT_PART_INSTALL/bin/
 
 apps:
   lighting:
-    daemon: forking
+    daemon: simple
+    command-chain:
+      - bin/load-snap-options.sh
     command: bin/run.sh
     install-mode: disable
     restart-delay: 10s
@@ -119,6 +122,8 @@ apps:
   
   # This app is to test the GPIO control without using a Matter controller
   test-blink:
+    command-chain:
+      - bin/load-snap-options.sh
     command: bin/test-blink
     plugs:
       - gpio
