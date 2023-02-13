@@ -21,14 +21,28 @@
 
 #include <lib/support/logging/CHIPLogging.h>
 #include <wiringPi.h>
-
-const int wiringPiPin = 7;
+#include <cstdlib>
+#include <iostream>
 
 LightingManager LightingManager::sLight;
+
+#define WiringPiPin "WIRINGPI_PIN"
+static int wiringPiPin;
 
 CHIP_ERROR LightingManager::Init()
 {
     mState = kState_On;
+
+    char *envWiringPiPin = std::getenv(WiringPiPin);
+    if (envWiringPiPin == NULL)
+    {
+        ChipLogError(AppServer, "Env var %s not set!", WiringPiPin);
+        exit(-1);
+        // TODO: return an appropriate and fatal error
+    }
+    ChipLogProgress(AppServer, "Wiring Pi PIN number: %s", envWiringPiPin);
+
+    wiringPiPin = std::stoi(envWiringPiPin);
 
     wiringPiSetup();
     pinMode(wiringPiPin, OUTPUT);
