@@ -1,7 +1,5 @@
 # Matter Pi GPIO Commander
-This app is a Matter lighting device which can be used to control LED using Raspberry Pi's GPIO pin.
-
-The lighting device communicates with others over WiFi/Ethernet.
+This app is a Matter lighting device which can be used to control the Raspberry Pi's GPIO. This can be used to control an LED or any other device.
 
 ## Build
 ```bash
@@ -16,20 +14,26 @@ snap install --dangerous *.snap
 For installing on a classic Ubuntu or any other Linux distro with snap confinement, add `--devmode`. Refer to [GPIO Access](GPIO.md) for details.
 
 ### Configure
-> note
-> TODO: The pin is currently hardcoded to Pin 7.
 
 ```bash
-snap set matter-pi-gpio-commander gpio=17
+snap set matter-pi-gpio-commander wiringpi-pin=7
 ```
 
+> **Note**  
+> The WiringPi pin numbering assignment differs from the physical pin and Raspberry Pi GPIO (BCM-GPIO).
+> 
+> For example, on a Raspberry Pi 4B, the WiringPi pin 8 corresponds to physical pin 3 and GPIO 2.
+> For reference, visit https://pinout.xyz/pinout/wiringpi
+
 ### Connect interfaces
-The [avahi-control](https://snapcraft.io/docs/avahi-control-interface) is necessary to allow discovery of the application via DNS-SD.
-To make this work, the host also needs to have a running avahi-daemon which can be installed with `sudo apt install avahi-daemon` or `snap install avahi`.
+The [avahi-control](https://snapcraft.io/docs/avahi-control-interface) is necessary to allow discovery of the application via DNS-SD:
 
 ```bash
 snap connect matter-pi-gpio-commander:avahi-control
 ```
+
+> **Note**  
+> To make DNS-SD discovery work, the host also needs to have a running avahi-daemon which can be installed with `sudo apt install avahi-daemon` or `snap install avahi`.
 
 The `gpio` interface provides slots for each GPIO channel. The slots can be listed using:
 ```bash
@@ -45,18 +49,18 @@ slots:
   ...
 ```
 
-The slots are not connected automatically. For example, to connect GPIO-7:
+The slots are not connected automatically. For example, to connect GPIO-4 (WiringPi pin 7 / physical pin 7):
 ```bash
-snap connect matter-pi-gpio-commander:gpio pi:bcm-gpio-7
+snap connect matter-pi-gpio-commander:gpio pi:bcm-gpio-4
 ```
 
 Check the list of connections:
 ```
 $ sudo snap connections
 Interface        Plug                            Slot              Notes
-gpio             matter-pi-gpio-commander:gpio   pi:bcm-gpio-7     manual
+gpio             matter-pi-gpio-commander:gpio   pi:bcm-gpio-4     manual
 …
-
+```
 
 ### Run
 ```bash
@@ -139,4 +143,14 @@ Activate the Python env and install the dependencies inside it:
 ```bash
 source ./out/python_env/bin/activate
 pip install -r build/requirements.txt
+```
+
+## Test Blink
+This project includes an app to quickly verify the chosen pin and snap GPIO access control without using a Matter Controller.
+The app will toggle the output voltage of the pin to high/low periodically.
+
+To use, install the snap and configure the WiringPi pin as explained above.
+Then run it:
+```bash
+matter-pi-gpio-commander.test-blink
 ```
