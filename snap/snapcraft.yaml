@@ -9,7 +9,7 @@ confinement: strict
 base: core22
 architectures:
   - build-on: arm64
-  - build-on: armhf
+  # - build-on: armhf
   # - build-on: amd64
 
 layout:
@@ -54,8 +54,20 @@ parts:
     plugin: nil
     source: app
     override-build: |
+      # Change to SDK's directory to allow caching of the activation
+      # regardless of this part's pull and build status.
       cd ../../connectedhomeip/src
 
+      # The project writes its data to /tmp which isn't persisted.
+      #
+      # There is currently has no known way of overriding the default paths to
+      #   both storage and security config files.
+      #
+      # Snap does not allow bind-mounting a persistent directory on /tmp, 
+      #  so we need to first replace it in the source with another path, i.e. /mnt.
+      # See the top-level layout definition which bind-mounts a persisted
+      #   directory within the confined snap space on /mnt.
+      #
       # Replace storage paths:
       sed -i 's/\/tmp/\/mnt/g' src/platform/Linux/CHIPLinuxStorage.h
       # Replace key-value store path:
