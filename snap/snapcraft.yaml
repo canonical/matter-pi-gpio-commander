@@ -34,7 +34,7 @@ parts:
     plugin: nil
     source: .
     override-build: |
-      g++ -Wall test-blink.cpp -lwiringPi
+      g++ -Wall test-blink.cpp -lwiringPi -o test-blink
       mkdir -p $CRAFT_PART_INSTALL/bin
       cp test-blink $CRAFT_PART_INSTALL/bin/
   
