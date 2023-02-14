@@ -1,39 +1,39 @@
 # Matter Pi GPIO Commander
 This app is a Matter lighting device which can be used to control the Raspberry Pi's GPIO. This can be used to control an LED or any other device.
 
-## Build
-```bash
-snapcraft -v
-```
-This will download >500MB and requires around 8GB of disk space. 
-
 ## Install
+> **Note**  
+> For installing on a classic Ubuntu or any other Linux distro with snap confinement, add `--devmode`. Refer to [GPIO Access](GPIO.md) for details.
+
 ```bash
-snap install --dangerous *.snap
+sudo snap install matter-pi-gpio-commander
 ```
-For installing on a classic Ubuntu or any other Linux distro with snap confinement, add `--devmode`. Refer to [GPIO Access](GPIO.md) for details.
 
 ### Configure
-
-```bash
-snap set matter-pi-gpio-commander wiringpi-pin=7
-```
-
-> **Note**  
+#### Set the pin
+> **Warning**  
 > The WiringPi pin numbering assignment differs from the physical pin and Raspberry Pi GPIO (BCM-GPIO).
-> 
 > For example, on a Raspberry Pi 4B, the WiringPi pin 8 corresponds to physical pin 3 and GPIO 2.
+> 
 > For reference, visit https://pinout.xyz/pinout/wiringpi
 
-### Connect interfaces
+```bash
+sudo snap set matter-pi-gpio-commander wiringpi-pin=7
+```
+
+### Grant access
+The snap uses [interfaces](https://snapcraft.io/docs/interface-management) to allow access to external resources. Depending on the use case, you need to "connect" certain interfaces to grant the necessary access.
+#### DNS-SD
 The [avahi-control](https://snapcraft.io/docs/avahi-control-interface) is necessary to allow discovery of the application via DNS-SD:
 
 ```bash
-snap connect matter-pi-gpio-commander:avahi-control
+sudo snap connect matter-pi-gpio-commander:avahi-control
 ```
 
 > **Note**  
 > To make DNS-SD discovery work, the host also needs to have a running avahi-daemon which can be installed with `sudo apt install avahi-daemon` or `snap install avahi`.
+
+#### GPIO
 
 The `gpio` interface provides slots for each GPIO channel. The slots can be listed using:
 ```bash
@@ -51,7 +51,7 @@ slots:
 
 The slots are not connected automatically. For example, to connect GPIO-4 (WiringPi pin 7 / physical pin 7):
 ```bash
-snap connect matter-pi-gpio-commander:gpio pi:bcm-gpio-4
+sudo snap connect matter-pi-gpio-commander:gpio pi:bcm-gpio-4
 ```
 
 Check the list of connections:
@@ -59,17 +59,22 @@ Check the list of connections:
 $ sudo snap connections
 Interface        Plug                            Slot              Notes
 gpio             matter-pi-gpio-commander:gpio   pi:bcm-gpio-4     manual
-…
+...
 ```
 
 ### Run
 ```bash
 sudo snap start matter-pi-gpio-commander
-sudo snap logs -f matter-pi-gpio-commander
+```
+Add `--enable` to make the service automatically start at boot. 
+
+Query and follow the logs:
+```
+sudo snap logs -n 100 -f matter-pi-gpio-commander
 ```
 
 ## Control with Chip Tool
-
+For the following examples, we use the [Chip Tool snap](https://snapcraft.io/chip-tool) to commission and control the lighting app.
 ### Commissioning
 
 ```bash
@@ -110,40 +115,19 @@ where:
 -   `1` is the endpoint of the configured device
 
 ## Development
-
-Assuming you have Ubuntu 22.04 and Python 3.10, install the following
-dependencies:
-
-### Dependencies
-```
-sudo apt install git gcc g++ libdbus-1-dev \
-  ninja-build python3-venv python3-dev \
-  python3-pip libgirepository1.0-dev libcairo2-dev
-# maybe:
-# sudo apt install pkg-config libssl-dev libglib2.0-dev libavahi-client-dev libreadline-dev
-```
-
-### Installation
-
-Shallow clone the Connected Home IP project:
+Build:
 ```bash
-git clone https://github.com/project-chip/connectedhomeip.git --depth=1
-cd ~/connectedhomeip/
-scripts/checkout_submodules.py --shallow --platform linux
+snapcraft -v
 ```
+This will download >500MB and requires around 8GB of disk space. 
 
-Build the Python/C libraries:
+To build for other architectures, customize the `architectures` field inside the snapcraft.yaml and use snapcraft's [Remote build](https://snapcraft.io/docs/remote-build).
+
+Install:
 ```bash
-source ./scripts/activate.sh
-./scripts/build_python_device.sh --chip_detail_logging true
+snap install --dangerous *.snap
 ```
-
-Activate the Python env and install the dependencies inside it:
-
-```bash
-source ./out/python_env/bin/activate
-pip install -r build/requirements.txt
-```
+For installing on a classic Ubuntu or any other Linux distro with snap confinement, add `--devmode`. Refer to [GPIO Access](GPIO.md) for details.
 
 ## Test Blink
 This project includes an app to quickly verify the chosen pin and snap GPIO access control without using a Matter Controller.
