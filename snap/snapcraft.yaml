@@ -9,7 +9,7 @@ confinement: strict
 base: core22
 architectures:
   - build-on: arm64
-  # - build-on: armhf
+  - build-on: armhf
   # - build-on: amd64
 
 layout:
