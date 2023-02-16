@@ -2,12 +2,16 @@
 This app is a Matter lighting device which can be used to control the Raspberry Pi's GPIO. This can be used to control an LED or any other device.
 
 ## Install
-> **Note**  
-> For installing on a classic Ubuntu or any other Linux distro with snap confinement, add `--devmode`. Refer to [GPIO Access](GPIO.md) for details.
 
 ```bash
 sudo snap install matter-pi-gpio-commander
 ```
+
+For installing on a classic Ubuntu or any other Linux distro with snap confinement but without the `gpio` interface:
+```bash
+sudo snap install matter-pi-gpio-commander --devmode
+```
+Refer to [GPIO.md](GPIO.md) for details.
 
 ### Configure
 #### Set the pin
@@ -34,8 +38,9 @@ sudo snap connect matter-pi-gpio-commander:avahi-control
 > To make DNS-SD discovery work, the host also needs to have a running avahi-daemon which can be installed with `sudo apt install avahi-daemon` or `snap install avahi`.
 
 #### GPIO
+The [`gpio`](https://snapcraft.io/docs/gpio-interface) interface provides slots for each GPIO channel. 
 
-The `gpio` interface provides slots for each GPIO channel. The slots can be listed using:
+The slots can be listed using:
 ```bash
 $ sudo snap interface gpio
 name:    gpio
@@ -48,6 +53,11 @@ slots:
   - pi:bcm-gpio-10
   ...
 ```
+
+> **Warning**  
+> If no `slots` are listed, it means that there is no `gpio` interface available.
+> In this case, you may skip the connection or may need to install in development mode.
+> Refer to [GPIO.md](GPIO.md) for details.
 
 The slots are not connected automatically. For example, to connect GPIO-4 (WiringPi pin 7 / physical pin 7):
 ```bash
@@ -136,5 +146,14 @@ The app will toggle the output voltage of the pin to high/low periodically.
 To use, install the snap and configure the WiringPi pin as explained above.
 Then run it:
 ```bash
-matter-pi-gpio-commander.test-blink
+sudo matter-pi-gpio-commander.test-blink
+```
+
+If you get the following error, it means that the GPIO access is not allowed. Refer to [GPIO.md](GPIO.md) for details.
+```
+sudo snap run matter-pi-gpio-commander.test-blink
+wiringPiSetup: Unable to open /dev/mem or /dev/gpiomem: Permission denied.
+  Aborting your program because if it can not access the GPIO
+  hardware then it most certianly won't work
+  Try running with sudo?
 ```
