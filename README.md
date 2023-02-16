@@ -144,7 +144,7 @@ This project includes an app to quickly verify the chosen pin and snap GPIO acce
 The app will toggle the output voltage of the pin to high/low periodically.
 
 To use, install the snap and configure the WiringPi pin as explained above.
-Then run it:
+Then, run it via `sudo snap run matter-pi-gpio-commander.test-blink` snap command or directly:
 ```bash
 sudo matter-pi-gpio-commander.test-blink
 ```
