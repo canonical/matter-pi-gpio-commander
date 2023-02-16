@@ -133,11 +133,7 @@ This will download >500MB and requires around 8GB of disk space.
 
 To build for other architectures, customize the `architectures` field inside the snapcraft.yaml and use snapcraft's [Remote build](https://snapcraft.io/docs/remote-build).
 
-Install:
-```bash
-snap install --dangerous *.snap
-```
-For installing on a classic Ubuntu or any other Linux distro with snap confinement, add `--devmode`. Refer to [GPIO Access](GPIO.md) for details.
+Install it as described in the [install](#install) section by replacing `matter-pi-gpio-commander` with the locally built snap file name and setting `--dangerous` flag.
 
 ## Test Blink
 This project includes an app to quickly verify the chosen pin and snap GPIO access control without using a Matter Controller.
