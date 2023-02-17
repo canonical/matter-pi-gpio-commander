@@ -1,2 +1,4 @@
 *.snap
 squashfs-root
+matter-pi-gpio-commander_*.txt
+test-blink

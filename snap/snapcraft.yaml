@@ -1,56 +1,95 @@
 name: matter-pi-gpio-commander
-version: "0.1"
-summary: Matter Raspberry Pi GPIO output commander
-description: |
-  TBA
-license: Apache-2.0
-confinement: strict
-base: core22
-grade: devel
+version: "0.2"
+summary: Raspberry Pi GPIO as a Matter lighting app
+description: Refer to https://snapcraft.io/matter-pi-gpio-commander
 
+grade: devel
+confinement: strict
+
+base: core22
 architectures:
   - build-on: arm64
   - build-on: armhf
+  # - build-on: amd64
 
 layout:
   /mnt:
-    bind: $SNAP_DATA/mnt
+    bind: $SNAP_COMMON/mnt
 
 parts:
-  build-res:
-    plugin: dump
-    source: build
-    override-build: |
-      cp requirements.txt $CRAFT_STAGE/
-  connectedhomeip:
-    after: [build-res]
+  wiring-pi:
     plugin: nil
-    override-build: |   
-      git clone https://github.com/project-chip/connectedhomeip.git --depth=1 .
+    source: https://github.com/WiringPi/WiringPi.git
+    source-depth: 1
+    source-tag: 2.61-1
+    override-build: |
+      WIRINGPI_SUDO="" ./build
+
+      mkdir -p $CRAFT_PART_INSTALL/lib
+      cp -v /usr/local/lib/libwiringPi.so* $CRAFT_PART_INSTALL/lib/
+    build-packages: [git, gcc, g++]
+
+  test-blink:
+    after: [wiring-pi]
+    plugin: nil
+    source: .
+    override-build: |
+      g++ -Wall test-blink.cpp -lwiringPi -o test-blink
+      mkdir -p $CRAFT_PART_INSTALL/bin
+      cp test-blink $CRAFT_PART_INSTALL/bin/
+  
+  connectedhomeip:
+    plugin: nil
+    source: https://github.com/project-chip/connectedhomeip.git
+    source-depth: 1
+    source-tag: v1.0.0.2
+    source-submodules: []
+    override-pull: |
+      craftctl default
+      # shallow clone the submodules
       scripts/checkout_submodules.py --shallow --platform linux
 
-      # The project writes its data to /tmp. Snap does not allow bind mounting
-      #   a persistent directory on /tmp, so we need to replace it in the code.
-      # Replace all /tmp directories with /mnt:
+  lighting:
+    after: [wiring-pi, connectedhomeip]
+    plugin: nil
+    source: app
+    override-build: |
+      # Change to SDK's directory to allow caching of the activation
+      # regardless of this part's pull and build status.
+      cd ../../connectedhomeip/src
+
+      # The project writes its data to /tmp which isn't persisted.
+      #
+      # There is currently has no known way of overriding the default paths to
+      #   both storage and security config files.
+      #
+      # Snap does not allow bind-mounting a persistent directory on /tmp, 
+      #  so we need to first replace it in the source with another path, i.e. /mnt.
+      # See the top-level layout definition which bind-mounts a persisted
+      #   directory within the confined snap space on /mnt.
+      #
+      # Replace storage paths:
       sed -i 's/\/tmp/\/mnt/g' src/platform/Linux/CHIPLinuxStorage.h
+      # Replace key-value store path:
       sed -i 's/\/tmp/\/mnt/g' src/platform/Linux/CHIPPlatformConfig.h
 
-      set +u # do not treat unset variables as error
-      # Setup the compilation environment
+      # To avoid unrelated activation errors, don't treat unset variables as error
+      set +u
       source scripts/activate.sh
+      set -u
+      
+      cd examples/lighting-app/linux/
 
-      # Python setup
-      ./scripts/build_python_device.sh --chip_detail_logging true
-      source out/python_env/bin/activate
+      # Copy and replace the application files
+      cp -vr $CRAFT_PART_BUILD/* .
 
-      # This is needed for the gpio. Install it here since the venv is active.
-      pip install -r $CRAFT_STAGE/requirements.txt
+      gn gen out/build
+      ninja -C out/build
 
-      sed 's/^VIRTUAL_ENV=.*/VIRTUAL_ENV="\$SNAP\/connectedhomeip\/python_env"/' \
-        out/python_env/bin/activate > out/python_env/bin/activate_snap
-
-      mkdir -p $CRAFT_PART_INSTALL/connectedhomeip
-      cp -r out/python_env $CRAFT_PART_INSTALL/connectedhomeip/
+      ldd out/build/chip-lighting-app
+      
+      mkdir -p $CRAFT_PART_INSTALL/bin
+      cp out/build/chip-lighting-app $CRAFT_PART_INSTALL/bin/lighting-app        
     build-packages:
       - git
       - gcc
@@ -70,28 +109,33 @@ parts:
       - libreadline-dev
       - generate-ninja
 
-  lighting:
-    after: [connectedhomeip]
-    plugin: dump
-    source: .
+  local-bin:
+    plugin: nil
+    source: snap/local/bin/
     override-build: |
-      mkdir -p $CRAFT_PART_INSTALL/bin $CRAFT_PART_INSTALL/etc
-      cp run.sh $CRAFT_PART_INSTALL/bin/
-      cp lighting.py $CRAFT_PART_INSTALL/bin/
-      
-    stage-packages:
-      - python3
-      - python3-venv
+      mkdir -p $CRAFT_PART_INSTALL/bin
+      cp -v run.sh $CRAFT_PART_INSTALL/bin/
+      cp -v load-snap-options.sh $CRAFT_PART_INSTALL/bin/
 
 apps:
   lighting:
     daemon: simple
+    command-chain:
+      - bin/load-snap-options.sh
+    command: bin/run.sh
     install-mode: disable
     restart-delay: 10s
-    command: bin/run.sh
     plugs:
       - network
       - network-bind
       - bluez
       - avahi-control
-      - gpio # not connected automatically
+      - gpio
+  
+  # This app is to test the GPIO control without using a Matter controller
+  test-blink:
+    command-chain:
+      - bin/load-snap-options.sh
+    command: bin/test-blink
+    plugs:
+      - gpio
