@@ -28,14 +28,16 @@ sudo snap set matter-pi-gpio-commander wiringpi-pin=7
 Make sure to also [grant the GPIO access](#GPIO).
 
 #### Set CLI flags
-The lighting app runs as a service without any default CLI flags. The snap allows passing flags to the service via the `args` snap option. 
+By default, the lighting app runs as a service without any CLI flags.
+The snap allows passing flags to the service via the `args` snap option. 
+This is useful for overriding SDK defaults to customize the application behavior.
 
 For example, to set the `--wifi --passcode 1234` flags:
 ```
 snap set matter-pi-gpio-commander args="--wifi --passcode 1234"
 ```
 
-To see the list of all flags, run the `help` app:
+To see the list of all flags and SDK default, run the `help` app:
 ```
 $ matter-pi-gpio-commander.help
 Usage: /snap/matter-pi-gpio-commander/x3/bin/lighting-app [opti
