@@ -131,7 +131,7 @@ apps:
       - bluez
       - avahi-control
       - gpio
-  lighting-help:
+  help:
     command: bin/lighting-app -h
 
   # This app is to test the GPIO control without using a Matter controller

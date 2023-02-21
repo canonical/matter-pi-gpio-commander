@@ -35,9 +35,9 @@ For example, to set the `--wifi --passcode 1234` flags:
 snap set matter-pi-gpio-commander args="--wifi --passcode 1234"
 ```
 
-To see the list of all flags, run the `lighting-help` app:
+To see the list of all flags, run the `help` app:
 ```
-$ matter-pi-gpio-commander.lighting-help
+$ matter-pi-gpio-commander.help
 Usage: /snap/matter-pi-gpio-commander/x3/bin/lighting-app [opti
 
 GENERAL OPTIONS
