@@ -8,33 +8,33 @@
 #include <cstdlib>
 #include <iostream>
 
-#define WiringPiPin "WIRINGPI_PIN"
+#define GPIO "GPIO"
 
 int main(void)
 {
-    char *envWiringPiPin = std::getenv(WiringPiPin);
-    int wiringPiPin;
+    char *envGPIO = std::getenv(GPIO);
+    int gpio;
     try
     {
-        wiringPiPin = std::stoi(envWiringPiPin);
-        std::cout << "WiringPi pin: " << wiringPiPin << std::endl;
+        gpio = std::stoi(envGPIO);
+        std::cout << "GPIO: " << gpio << std::endl;
     }
     catch (std::exception &ex)
     {
-        std::cerr << "Non-integer value for WiringPi pin: " << ex.what() << std::endl;
+        std::cerr << "Non-integer value for GPIO: " << ex.what() << std::endl;
         return 1;
     }
 
-    wiringPiSetup();
-    pinMode(wiringPiPin, OUTPUT);
+    wiringPiSetupGpio();
+    pinMode(gpio, OUTPUT);
 
     for (;;)
     {
-        digitalWrite(wiringPiPin, HIGH);
+        digitalWrite(gpio, HIGH);
         std::cout << "On" << std::endl;
         delay(500);
 
-        digitalWrite(wiringPiPin, LOW);
+        digitalWrite(gpio, LOW);
         std::cout << "Off" << std::endl;
         delay(500);
     }
