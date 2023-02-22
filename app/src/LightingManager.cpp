@@ -23,6 +23,7 @@
 #include <wiringPi.h>
 #include <cstdlib>
 #include <iostream>
+#include <cstring>
 
 LightingManager LightingManager::sLight;
 
@@ -34,9 +35,9 @@ CHIP_ERROR LightingManager::Init()
     mState = kState_On;
 
     char *envGPIO = std::getenv(GPIO);
-    if (envGPIO == NULL)
+    if (envGPIO == NULL || strlen(envGPIO) == 0)
     {
-        ChipLogError(AppServer, "Environment variable not set: %s", GPIO);
+        ChipLogError(AppServer, "Environment variable not set or empty: %s", GPIO);
         exit(-1);
         // TODO: return an appropriate and fatal error
     }
