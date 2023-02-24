@@ -1,5 +1,5 @@
 name: matter-pi-gpio-commander
-version: "0.2"
+version: "0.3.0"
 summary: Raspberry Pi GPIO as a Matter lighting app
 description: Refer to https://snapcraft.io/matter-pi-gpio-commander
 
@@ -131,7 +131,9 @@ apps:
       - bluez
       - avahi-control
       - gpio
-  
+  help:
+    command: bin/lighting-app -h
+
   # This app is to test the GPIO control without using a Matter controller
   test-blink:
     command-chain:

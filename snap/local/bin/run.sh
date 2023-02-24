@@ -1,3 +1,3 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 
-$SNAP/bin/lighting-app
+$SNAP/bin/lighting-app $ARGS
