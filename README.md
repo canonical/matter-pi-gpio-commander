@@ -20,9 +20,36 @@ Refer to [GPIO.md](GPIO.md) for details.
 sudo snap set matter-pi-gpio-commander gpio=4
 ```
 
-> **Note**  
-> The GPIO value refers to the Broadcom (BCM) GPIO.
-> For a reference on Raspberry Pi pinout, see https://pinout.xyz
+Make sure to also [grant the GPIO access](#GPIO).
+
+#### Set CLI flags
+By default, the lighting app runs as a service without any CLI flags.
+The snap allows passing flags to the service via the `args` snap option. 
+This is useful for overriding SDK defaults to customize the application behavior.
+
+For example, to set the `--wifi --passcode 1234` flags:
+```
+snap set matter-pi-gpio-commander args="--wifi --passcode 1234"
+```
+
+To see the list of all flags and SDK default, run the `help` app:
+```
+$ matter-pi-gpio-commander.help
+Usage: /snap/matter-pi-gpio-commander/x3/bin/lighting-app [opti
+
+GENERAL OPTIONS
+
+  --ble-device <number>
+       The device number for CHIPoBLE, without 'hci' prefix, can be found by hciconfig.
+
+  --wifi
+       Enable WiFi management via wpa_supplicant.
+
+  --thread
+       Enable Thread management via ot-agent.
+
+  ...
+```
 
 ### Grant access
 The snap uses [interfaces](https://snapcraft.io/docs/interface-management) to allow access to external resources. Depending on the use case, you need to "connect" certain interfaces to grant the necessary access.
