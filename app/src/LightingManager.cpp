@@ -23,29 +23,30 @@
 #include <wiringPi.h>
 #include <cstdlib>
 #include <iostream>
+#include <cstring>
 
 LightingManager LightingManager::sLight;
 
-#define WiringPiPin "WIRINGPI_PIN"
-static int wiringPiPin;
+#define GPIO "GPIO"
+static int gpio;
 
 CHIP_ERROR LightingManager::Init()
 {
     mState = kState_On;
 
-    char *envWiringPiPin = std::getenv(WiringPiPin);
-    if (envWiringPiPin == NULL)
+    char *envGPIO = std::getenv(GPIO);
+    if (envGPIO == NULL || strlen(envGPIO) == 0)
     {
-        ChipLogError(AppServer, "Env var %s not set!", WiringPiPin);
+        ChipLogError(AppServer, "Environment variable not set or empty: %s", GPIO);
         exit(-1);
         // TODO: return an appropriate and fatal error
     }
-    ChipLogProgress(AppServer, "WiringPi pin number: %s", envWiringPiPin);
+    ChipLogProgress(AppServer, "Using GPIO %s", envGPIO);
 
-    wiringPiPin = std::stoi(envWiringPiPin);
+    gpio = std::stoi(envGPIO);
 
-    wiringPiSetup();
-    pinMode(wiringPiPin, OUTPUT);
+    wiringPiSetupGpio();
+    pinMode(gpio, OUTPUT);
 
     return CHIP_NO_ERROR;
 }
@@ -115,11 +116,11 @@ void LightingManager::Set(bool aOn)
     if (aOn)
     {
         mState = kState_On;
-        digitalWrite(wiringPiPin, HIGH);
+        digitalWrite(gpio, HIGH);
     }
     else
     {
         mState = kState_Off;
-        digitalWrite(wiringPiPin, LOW);
+        digitalWrite(gpio, LOW);
     }
 }

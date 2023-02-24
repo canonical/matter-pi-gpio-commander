@@ -7,34 +7,41 @@
 #include <wiringPi.h>
 #include <cstdlib>
 #include <iostream>
+#include <cstring>
 
-#define WiringPiPin "WIRINGPI_PIN"
+#define GPIO "GPIO"
 
 int main(void)
 {
-    char *envWiringPiPin = std::getenv(WiringPiPin);
-    int wiringPiPin;
-    try
+    char *envGPIO = std::getenv(GPIO);
+    if (envGPIO == NULL || strlen(envGPIO) == 0)
     {
-        wiringPiPin = std::stoi(envWiringPiPin);
-        std::cout << "WiringPi pin: " << wiringPiPin << std::endl;
-    }
-    catch (std::exception &ex)
-    {
-        std::cerr << "Non-integer value for WiringPi pin: " << ex.what() << std::endl;
+        std::cout << "Environment variable not set or empty: " << GPIO << std::endl;
         return 1;
     }
 
-    wiringPiSetup();
-    pinMode(wiringPiPin, OUTPUT);
+    int gpio;
+    try
+    {
+        gpio = std::stoi(envGPIO);
+        std::cout << "GPIO: " << gpio << std::endl;
+    }
+    catch (std::exception &ex)
+    {
+        std::cerr << "Non-integer value for GPIO: " << ex.what() << std::endl;
+        return 1;
+    }
+
+    wiringPiSetupGpio();
+    pinMode(gpio, OUTPUT);
 
     for (;;)
     {
-        digitalWrite(wiringPiPin, HIGH);
+        digitalWrite(gpio, HIGH);
         std::cout << "On" << std::endl;
         delay(500);
 
-        digitalWrite(wiringPiPin, LOW);
+        digitalWrite(gpio, LOW);
         std::cout << "Off" << std::endl;
         delay(500);
     }

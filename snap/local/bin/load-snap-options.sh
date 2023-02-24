@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-export WIRINGPI_PIN=$(snapctl get wiringpi-pin)
+export GPIO=$(snapctl get gpio)
 export ARGS=$(snapctl get args)
 
 exec "$@"

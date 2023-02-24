@@ -15,14 +15,9 @@ Refer to [GPIO.md](GPIO.md) for details.
 
 ### Configure
 #### Set the pin
-> **Warning**  
-> The WiringPi pin numbering assignment differs from the physical pin and Raspberry Pi GPIO (BCM-GPIO).
-> For example, on a Raspberry Pi 4B, the WiringPi pin 8 corresponds to physical pin 3 and GPIO 2.
-> 
-> For reference, visit https://pinout.xyz/pinout/wiringpi
 
 ```bash
-sudo snap set matter-pi-gpio-commander wiringpi-pin=7
+sudo snap set matter-pi-gpio-commander gpio=4
 ```
 
 Make sure to also [grant the GPIO access](#GPIO).
@@ -55,7 +50,6 @@ GENERAL OPTIONS
 
   ...
 ```
-
 
 ### Grant access
 The snap uses [interfaces](https://snapcraft.io/docs/interface-management) to allow access to external resources. Depending on the use case, you need to "connect" certain interfaces to grant the necessary access.
@@ -91,7 +85,7 @@ slots:
 > In this case, you may skip the connection or may need to install in development mode.
 > Refer to [GPIO.md](GPIO.md) for details.
 
-The slots are not connected automatically. For example, to connect GPIO-4 (WiringPi pin 7 / physical pin 7):
+The slots are not connected automatically. For example, to grant access to GPIO 4:
 ```bash
 sudo snap connect matter-pi-gpio-commander:gpio pi:bcm-gpio-4
 ```
@@ -171,7 +165,7 @@ Install it as described in the [install](#install) section by replacing `matter-
 This project includes an app to quickly verify the chosen pin and snap GPIO access control without using a Matter Controller.
 The app will toggle the output voltage of the pin to high/low periodically.
 
-To use, install the snap and configure the WiringPi pin as explained above.
+To use, install the snap and configure the GPIO as explained above.
 Then, run it via `sudo snap run matter-pi-gpio-commander.test-blink` snap command or directly:
 ```bash
 sudo matter-pi-gpio-commander.test-blink
