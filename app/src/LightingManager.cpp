@@ -40,8 +40,6 @@ CHIP_ERROR LightingManager::Init()
     {
         ChipLogError(AppServer, "Environment variable not set or empty: %s", GPIO);
 
-        chip::DeviceLayer::PlatformMgr().Shutdown();
-        chip::Platform::MemoryShutdown();
         return CHIP_ERROR_INVALID_ARGUMENT;
     }
     ChipLogProgress(AppServer, "Using GPIO %s", envGPIO);
