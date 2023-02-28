@@ -20,6 +20,7 @@
 #include "LightingManager.h"
 
 #include <lib/support/logging/CHIPLogging.h>
+#include <platform/CHIPDeviceLayer.h>
 #include <wiringPi.h>
 #include <cstdlib>
 #include <iostream>
@@ -38,8 +39,10 @@ CHIP_ERROR LightingManager::Init()
     if (envGPIO == NULL || strlen(envGPIO) == 0)
     {
         ChipLogError(AppServer, "Environment variable not set or empty: %s", GPIO);
-        exit(-1);
-        // TODO: return an appropriate and fatal error
+
+        chip::DeviceLayer::PlatformMgr().Shutdown();
+        chip::Platform::MemoryShutdown();
+        return CHIP_ERROR_INVALID_ARGUMENT;
     }
     ChipLogProgress(AppServer, "Using GPIO %s", envGPIO);
 
