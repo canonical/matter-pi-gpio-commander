@@ -20,7 +20,6 @@
 #include "LightingManager.h"
 
 #include <lib/support/logging/CHIPLogging.h>
-#include <platform/CHIPDeviceLayer.h>
 #include <wiringPi.h>
 #include <cstdlib>
 #include <iostream>
