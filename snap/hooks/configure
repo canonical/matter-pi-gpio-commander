@@ -1,3 +1,9 @@
 #!/bin/bash
 
-# This empty script is to allow use of snap options.
+TAG="$SNAP_INSTANCE_NAME.configure"
+
+GPIO=$(snapctl get gpio)
+if [[ -n $GPIO ]] && [[ $GPIO -lt 1 ]]; then
+    logger -t $TAG --stderr "gpio: '$GPIO' is not a positive integer"
+    exit 1
+fi
