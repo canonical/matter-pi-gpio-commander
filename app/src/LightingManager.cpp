@@ -24,11 +24,42 @@
 #include <cstdlib>
 #include <iostream>
 #include <cstring>
+#include <cerrno>
+#include <limits>
 
 LightingManager LightingManager::sLight;
 
 #define GPIO "GPIO"
 static int gpio;
+
+bool convertStringToIntNoExcept(const char* p, int& outInt) 
+{
+    errno = 0;
+    char* p_end{};
+    const long value = std::strtol(p, &p_end, 10);
+
+    const bool conversion_error = (p == p_end);
+    if (conversion_error)
+    {
+        return false;
+    }
+
+    const bool long_range_error = (errno == ERANGE); 
+    if (long_range_error)
+    {
+        return false;
+    }
+
+    const bool int_range_error = (value < std::numeric_limits<int>::min() || value > std::numeric_limits<int>::max());
+    if (int_range_error)
+    {
+        return false;
+    }
+
+    outInt = static_cast<int>(value);
+
+    return true;
+}
 
 CHIP_ERROR LightingManager::Init()
 {
@@ -38,13 +69,22 @@ CHIP_ERROR LightingManager::Init()
     if (envGPIO == NULL || strlen(envGPIO) == 0)
     {
         ChipLogError(AppServer, "Environment variable not set or empty: %s", GPIO);
-
         return CHIP_ERROR_INVALID_ARGUMENT;
     }
-    ChipLogProgress(AppServer, "Using GPIO %s", envGPIO);
 
-    gpio = std::stoi(envGPIO);
+    if (!convertStringToIntNoExcept(envGPIO, gpio))
+    {
+        ChipLogError(AppServer, "Non-integer value for GPIO: %s", envGPIO);
+        return CHIP_ERROR_INVALID_ARGUMENT;
+    }
 
+    if (gpio <= 0)
+    {
+        ChipLogError(AppServer, "Invalid value for GPIO: %s", envGPIO);
+        return CHIP_ERROR_INVALID_ARGUMENT;
+    }
+
+    ChipLogProgress(AppServer, "Using GPIO %d", gpio);
     wiringPiSetupGpio();
     pinMode(gpio, OUTPUT);
 
