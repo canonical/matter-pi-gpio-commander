@@ -1,4 +1,6 @@
 # Matter Pi GPIO Commander
+[![matter-pi-gpio-commander](https://snapcraft.io/matter-pi-gpio-commander/badge.svg)](https://snapcraft.io/matter-pi-gpio-commander)
+
 This app is a Matter lighting device which can be used to control the Raspberry Pi's GPIO. This can be used to control an LED or any other device.
 
 ## Install
