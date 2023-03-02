@@ -30,6 +30,9 @@ parts:
 
       mkdir -p $CRAFT_PART_INSTALL/lib
       cp -v /usr/local/lib/libwiringPi.so* $CRAFT_PART_INSTALL/lib/
+
+      mkdir -p $CRAFT_PART_INSTALL/usr/share/doc/libwiringPi
+      cp COPYING.LESSER $CRAFT_PART_INSTALL/usr/share/doc/libwiringPi/
     build-packages: [git, gcc, g++]
 
   test-blink:
