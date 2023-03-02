@@ -7,12 +7,6 @@ This app is a Matter lighting device which can be used to control the Raspberry 
 sudo snap install matter-pi-gpio-commander
 ```
 
-For installing on a classic Ubuntu or any other Linux distro with snap confinement but without the `gpio` interface:
-```bash
-sudo snap install matter-pi-gpio-commander --devmode
-```
-Refer to [GPIO.md](GPIO.md) for details.
-
 ### Configure
 #### Set the pin
 
@@ -64,38 +58,10 @@ sudo snap connect matter-pi-gpio-commander:avahi-control
 > To make DNS-SD discovery work, the host also needs to have a running avahi-daemon which can be installed with `sudo apt install avahi-daemon` or `snap install avahi`.
 
 #### GPIO
-The [`gpio`](https://snapcraft.io/docs/gpio-interface) interface provides slots for each GPIO channel. 
+The [`gpio-memory-control`](https://snapcraft.io/docs/gpio-memory-control-interface) grants access to all GPIO memory.
 
-The slots can be listed using:
 ```bash
-$ sudo snap interface gpio
-name:    gpio
-summary: allows access to specific GPIO pin
-plugs:
-  - matter-pi-gpio-commander
-slots:
-  - pi:bcm-gpio-0
-  - pi:bcm-gpio-1
-  - pi:bcm-gpio-10
-  ...
-```
-
-> **Warning**  
-> If no `slots` are listed, it means that there is no `gpio` interface available.
-> In this case, you may skip the connection or may need to install in development mode.
-> Refer to [GPIO.md](GPIO.md) for details.
-
-The slots are not connected automatically. For example, to grant access to GPIO 4:
-```bash
-sudo snap connect matter-pi-gpio-commander:gpio pi:bcm-gpio-4
-```
-
-Check the list of connections:
-```
-$ sudo snap connections
-Interface        Plug                            Slot              Notes
-gpio             matter-pi-gpio-commander:gpio   pi:bcm-gpio-4     manual
-...
+sudo snap connect matter-pi-gpio-commander:gpio-memory-control
 ```
 
 ### Run
@@ -169,13 +135,4 @@ To use, install the snap and configure the GPIO as explained above.
 Then, run it via `sudo snap run matter-pi-gpio-commander.test-blink` snap command or directly:
 ```bash
 sudo matter-pi-gpio-commander.test-blink
-```
-
-If you get the following error, it means that the GPIO access is not allowed. Refer to [GPIO.md](GPIO.md) for details.
-```
-sudo snap run matter-pi-gpio-commander.test-blink
-wiringPiSetup: Unable to open /dev/mem or /dev/gpiomem: Permission denied.
-  Aborting your program because if it can not access the GPIO
-  hardware then it most certianly won't work
-  Try running with sudo?
 ```

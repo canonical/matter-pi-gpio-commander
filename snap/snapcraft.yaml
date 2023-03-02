@@ -130,7 +130,7 @@ apps:
       - network-bind
       - bluez
       - avahi-control
-      - gpio
+      - gpio-memory-control
   help:
     command: bin/lighting-app -h
 
@@ -140,4 +140,4 @@ apps:
       - bin/load-snap-options.sh
     command: bin/test-blink
     plugs:
-      - gpio
+      - gpio-memory-control
