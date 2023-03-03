@@ -3,6 +3,9 @@ version: "0.3.0"
 summary: Raspberry Pi GPIO as a Matter lighting app
 description: Refer to https://snapcraft.io/matter-pi-gpio-commander
 
+# Apart from WiringPi (LGPL-3.0-only), everything else has Apache-2.0 license
+license: Apache-2.0 OR LGPL-3.0-only
+
 grade: devel
 confinement: strict
 
@@ -27,6 +30,9 @@ parts:
 
       mkdir -p $CRAFT_PART_INSTALL/lib
       cp -v /usr/local/lib/libwiringPi.so* $CRAFT_PART_INSTALL/lib/
+
+      mkdir -p $CRAFT_PART_INSTALL/usr/share/doc/libwiringPi
+      cp COPYING.LESSER $CRAFT_PART_INSTALL/usr/share/doc/libwiringPi/
     build-packages: [git, gcc, g++]
 
   test-blink:
