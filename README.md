@@ -55,7 +55,7 @@ The snap uses [interfaces](https://snapcraft.io/docs/interface-management) to al
 The [avahi-control](https://snapcraft.io/docs/avahi-control-interface) is necessary to allow discovery of the application via DNS-SD:
 
 ```bash
-sudo snap connect matter-pi-gpio-commander:avahi-control
+sudo snap connect matter-pi-gpio-commander:avahi-control avahi:avahi-control
 ```
 
 > **Note**  
