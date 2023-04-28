@@ -32,8 +32,6 @@ static int gpio;
 
 CHIP_ERROR LightingManager::Init()
 {
-    mState = kState_On;
-
     char *envGPIO = std::getenv(GPIO);
     if (envGPIO == NULL || strlen(envGPIO) == 0)
     {
@@ -47,6 +45,10 @@ CHIP_ERROR LightingManager::Init()
 
     wiringPiSetupGpio();
     pinMode(gpio, OUTPUT);
+    
+    // initialize both the stored and actual states to on
+    mState = kState_On;
+    digitalWrite(gpio, HIGH);
 
     return CHIP_NO_ERROR;
 }
