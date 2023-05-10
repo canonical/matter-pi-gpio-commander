@@ -59,7 +59,15 @@ sudo snap connect matter-pi-gpio-commander:avahi-control
 ```
 
 > **Note**  
-> To make DNS-SD discovery work, the host also needs to have a running avahi-daemon which can be installed with `sudo apt install avahi-daemon` or `snap install avahi`.
+> To make DNS-SD discovery work, the host also needs to have a running avahi-daemon which can be installed with `sudo apt install avahi-daemon` or `sudo snap install avahi`.
+
+
+> **Note**  
+> On **Ubuntu Core**, the `avahi-control` interface is not provided by the system. Instead, it depends on the Avahi snap.
+> To use the `avahi-control` interface from `avahi` snap, run:
+> ```bash
+> sudo snap connect matter-pi-gpio-commander:avahi-control avahi:avahi-control
+> ```
 
 #### GPIO
 The [`gpio-memory-control`](https://snapcraft.io/docs/gpio-memory-control-interface) grants access to all GPIO memory.
