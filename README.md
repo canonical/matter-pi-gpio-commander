@@ -92,23 +92,14 @@ For the following examples, we use the [Chip Tool snap](https://snapcraft.io/chi
 ### Commissioning
 
 ```bash
-sudo chip-tool pairing ethernet 110 20202021 3840 192.168.1.111 5540
+sudo snap connect chip-tool:avahi-observe
+sudo chip-tool pairing onnetwork 110 20202021
 ```
 
 where:
 
 -   `110` is the assigned node id
 -   `20202021` is the default passcode (pin code) for the lighting app
--   `3840` is the discriminator id
--   `192.168.1.111` is the IP address of the host for the lighting app
--   `5540` the the port for the lighting app
-
-Alternatively, to commission with discovery which works with DNS-SD:
-
-```bash
-sudo snap connect chip-tool:avahi-observe
-sudo chip-tool pairing onnetwork 110 20202021
-```
 
 ### Command
 
