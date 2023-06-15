@@ -48,7 +48,7 @@ parts:
     plugin: nil
     source: https://github.com/project-chip/connectedhomeip.git
     source-depth: 1
-    source-tag: v1.0.0.2
+    source-tag: v1.1.0.1
     source-submodules: []
     override-pull: |
       craftctl default
@@ -84,7 +84,20 @@ parts:
       source scripts/activate.sh
       set -u
       
-      cd examples/lighting-app/linux/
+      # Check SNAP_ARCH and install ZAP tool for arm builds
+      if [[ $SNAP_ARCH == "arm64" || $SNAP_ARCH == "armhf" ]]; then
+        ZAP_VERSION=v2023.05.04
+        set -x
+        mkdir -p /opt/zap-${ZAP_VERSION}
+        git clone https://github.com/project-chip/zap.git /opt/zap-${ZAP_VERSION}
+        cd /opt/zap-${ZAP_VERSION}
+        git checkout -b ${ZAP_VERSION}
+        npm ci
+        export ZAP_DEVELOPMENT_PATH=/opt/zap-${ZAP_VERSION}
+      fi
+
+      cd $CRAFT_PART_BUILD
+      cd ../../connectedhomeip/src/examples/lighting-app/linux/
 
       # Copy and replace the application files
       cp -vr $CRAFT_PART_BUILD/* .
@@ -96,6 +109,8 @@ parts:
       
       mkdir -p $CRAFT_PART_INSTALL/bin
       cp out/build/chip-lighting-app $CRAFT_PART_INSTALL/bin/lighting-app        
+    build-snaps:
+      - node/12/stable
     build-packages:
       - git
       - gcc
