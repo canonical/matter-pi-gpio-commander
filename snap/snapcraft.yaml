@@ -92,6 +92,9 @@ parts:
         git clone https://github.com/project-chip/zap.git /opt/zap-${ZAP_VERSION}
         cd /opt/zap-${ZAP_VERSION}
         git checkout -b ${ZAP_VERSION}
+        npm cache clean --force
+        npm install -g npm@9.7.1
+        npm update --force
         npm ci
         export ZAP_DEVELOPMENT_PATH=/opt/zap-${ZAP_VERSION}
       fi
@@ -110,7 +113,7 @@ parts:
       mkdir -p $CRAFT_PART_INSTALL/bin
       cp out/build/chip-lighting-app $CRAFT_PART_INSTALL/bin/lighting-app        
     build-snaps:
-      - node/12/stable
+      - node/20/stable
     build-packages:
       - git
       - gcc
@@ -129,6 +132,11 @@ parts:
       - libcairo2-dev
       - libreadline-dev
       - generate-ninja
+      - build-essential 
+      - libpango1.0-dev 
+      - libjpeg-dev 
+      - libgif-dev 
+      - librsvg2-dev
 
   local-bin:
     plugin: nil
