@@ -12,7 +12,7 @@ confinement: strict
 base: core22
 architectures:
   - build-on: arm64
-  - build-on: armhf
+  # - build-on: armhf
   # - build-on: amd64
 
 layout:
@@ -79,28 +79,45 @@ parts:
       # Replace key-value store path:
       sed -i 's/\/tmp/\/mnt/g' src/platform/Linux/CHIPPlatformConfig.h
 
-      # To avoid unrelated activation errors, don't treat unset variables as error
-      set +u
-      source scripts/activate.sh
-      set -u
-      
-      # Check SNAP_ARCH and install ZAP tool for arm builds
-      if [[ $SNAP_ARCH == "arm64" || $SNAP_ARCH == "armhf" ]]; then
-        ZAP_VERSION=v2023.05.04
+      # Install NodeJS and ZAP tool for arm builds
+      if [[ $SNAP_ARCH == "arm64" ]]; then
         set -x
+
+        mkdir node_js
+        cd node_js
+        wget https://nodejs.org/dist/v12.22.12/node-v12.22.12-linux-x64.tar.xz
+        tar xfvJ node-v12.22.12-linux-x64.tar.xz
+        cp -rn node-v12.22.12-linux-x64/. /opt/node-v12.22.12-linux-x64/
+        rm -r node-v12.22.12-linux-x64
+        rm -rf /opt/node
+        rm -rf /usr/bin/node
+        rm -rf /usr/bin/npm
+        rm -rf /usr/bin/npx
+        ln -s /opt/node-v12.22.12-linux-x64 /opt/node
+        ln -s /opt/node/bin/* /usr/bin
+        cd ..
+        rm -rf node_js
+
+        ZAP_VERSION=v2023.05.22-nightly
         mkdir -p /opt/zap-${ZAP_VERSION}
         git clone https://github.com/project-chip/zap.git /opt/zap-${ZAP_VERSION}
         cd /opt/zap-${ZAP_VERSION}
         git checkout -b ${ZAP_VERSION}
         npm cache clean --force
-        npm install -g npm@9.7.1
-        npm update --force
+        npm install -g npm@latest
         npm ci
         export ZAP_DEVELOPMENT_PATH=/opt/zap-${ZAP_VERSION}
       fi
 
       cd $CRAFT_PART_BUILD
-      cd ../../connectedhomeip/src/examples/lighting-app/linux/
+      cd ../../connectedhomeip/src
+
+      # To avoid unrelated activation errors, don't treat unset variables as error
+      set +u
+      source scripts/activate.sh
+      set -u
+
+      cd examples/lighting-app/linux/
 
       # Copy and replace the application files
       cp -vr $CRAFT_PART_BUILD/* .
@@ -112,8 +129,6 @@ parts:
       
       mkdir -p $CRAFT_PART_INSTALL/bin
       cp out/build/chip-lighting-app $CRAFT_PART_INSTALL/bin/lighting-app        
-    build-snaps:
-      - node/20/stable
     build-packages:
       - git
       - gcc
@@ -137,6 +152,7 @@ parts:
       - libjpeg-dev 
       - libgif-dev 
       - librsvg2-dev
+      - wget
 
   local-bin:
     plugin: nil
