@@ -12,7 +12,7 @@ confinement: strict
 base: core22
 architectures:
   - build-on: arm64
-  - build-on: armhf
+  # - build-on: armhf
   # - build-on: amd64
 
 layout:
@@ -48,7 +48,7 @@ parts:
     plugin: nil
     source: https://github.com/project-chip/connectedhomeip.git
     source-depth: 1
-    source-tag: v1.0.0.2
+    source-tag: v1.1.0.1
     source-submodules: []
     override-pull: |
       craftctl default
@@ -79,11 +79,44 @@ parts:
       # Replace key-value store path:
       sed -i 's/\/tmp/\/mnt/g' src/platform/Linux/CHIPPlatformConfig.h
 
+      # Install NodeJS and ZAP tool for arm builds
+      if [[ $SNAP_ARCH == "arm64" ]]; then
+        set -x
+
+        mkdir node_js
+        cd node_js
+        wget https://nodejs.org/dist/v12.22.12/node-v12.22.12-linux-x64.tar.xz
+        tar xfvJ node-v12.22.12-linux-x64.tar.xz
+        cp -rn node-v12.22.12-linux-x64/. /opt/node-v12.22.12-linux-x64/
+        rm -r node-v12.22.12-linux-x64
+        rm -rf /opt/node
+        rm -rf /usr/bin/node
+        rm -rf /usr/bin/npm
+        rm -rf /usr/bin/npx
+        ln -s /opt/node-v12.22.12-linux-x64 /opt/node
+        ln -s /opt/node/bin/* /usr/bin
+        cd ..
+        rm -rf node_js
+
+        ZAP_VERSION=v2023.05.22-nightly
+        mkdir -p /opt/zap-${ZAP_VERSION}
+        git clone https://github.com/project-chip/zap.git /opt/zap-${ZAP_VERSION}
+        cd /opt/zap-${ZAP_VERSION}
+        git checkout -b ${ZAP_VERSION}
+        npm cache clean --force
+        npm install -g npm@latest
+        npm ci
+        export ZAP_DEVELOPMENT_PATH=/opt/zap-${ZAP_VERSION}
+      fi
+
+      cd $CRAFT_PART_BUILD
+      cd ../../connectedhomeip/src
+
       # To avoid unrelated activation errors, don't treat unset variables as error
       set +u
       source scripts/activate.sh
       set -u
-      
+
       cd examples/lighting-app/linux/
 
       # Copy and replace the application files
@@ -114,6 +147,12 @@ parts:
       - libcairo2-dev
       - libreadline-dev
       - generate-ninja
+      - build-essential 
+      - libpango1.0-dev 
+      - libjpeg-dev 
+      - libgif-dev 
+      - librsvg2-dev
+      - wget
 
   local-bin:
     plugin: nil
