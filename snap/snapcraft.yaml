@@ -85,7 +85,7 @@ parts:
 
         # Install node and npm
         NODE_VERSION=v18.16.1
-        curl -O https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-linux-arm64.tar.xz
+        wget https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-linux-arm64.tar.xz
         mkdir -p /usr/local/lib/nodejs
         tar -xJf node-$NODE_VERSION-linux-arm64.tar.xz -C /usr/local/lib/nodejs 
         export PATH=/usr/local/lib/nodejs/node-$NODE_VERSION-linux-arm64/bin:$PATH
@@ -144,6 +144,7 @@ parts:
       - libjpeg-dev 
       - libgif-dev 
       - librsvg2-dev
+      - wget
 
   local-bin:
     plugin: nil
