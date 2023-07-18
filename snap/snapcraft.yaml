@@ -83,29 +83,21 @@ parts:
       if [[ $SNAP_ARCH == "arm64" ]]; then
         set -x
 
-        mkdir node_js
-        cd node_js
-        wget https://nodejs.org/dist/v12.22.12/node-v12.22.12-linux-x64.tar.xz
-        tar xfvJ node-v12.22.12-linux-x64.tar.xz
-        cp -rn node-v12.22.12-linux-x64/. /opt/node-v12.22.12-linux-x64/
-        rm -r node-v12.22.12-linux-x64
-        rm -rf /opt/node
-        rm -rf /usr/bin/node
-        rm -rf /usr/bin/npm
-        rm -rf /usr/bin/npx
-        ln -s /opt/node-v12.22.12-linux-x64 /opt/node
-        ln -s /opt/node/bin/* /usr/bin
-        cd ..
-        rm -rf node_js
+        # Install node and npm
+        NODE_VERSION=v18.16.1
+        wget https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-linux-arm64.tar.xz
+        mkdir -p /usr/local/lib/nodejs
+        tar -xJf node-$NODE_VERSION-linux-arm64.tar.xz -C /usr/local/lib/nodejs 
+        export PATH=/usr/local/lib/nodejs/node-$NODE_VERSION-linux-arm64/bin:$PATH
 
-        ZAP_VERSION=v2023.05.22-nightly
-        mkdir -p /opt/zap-${ZAP_VERSION}
-        git clone https://github.com/project-chip/zap.git /opt/zap-${ZAP_VERSION}
+        # Install ZAP
+        ZAP_VERSION=v2023.05.04
+        rm -fr /opt/zap-${ZAP_VERSION}
+        mkdir /opt/zap-${ZAP_VERSION}
+        git clone --depth=1 --branch=${ZAP_VERSION} https://github.com/project-chip/zap.git /opt/zap-${ZAP_VERSION}
         cd /opt/zap-${ZAP_VERSION}
-        git checkout -b ${ZAP_VERSION}
-        npm cache clean --force
-        npm install -g npm@latest
-        npm ci
+        npm install
+
         export ZAP_DEVELOPMENT_PATH=/opt/zap-${ZAP_VERSION}
       fi
 
