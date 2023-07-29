@@ -59,7 +59,15 @@ sudo snap connect matter-pi-gpio-commander:avahi-control
 ```
 
 > **Note**  
-> To make DNS-SD discovery work, the host also needs to have a running avahi-daemon which can be installed with `sudo apt install avahi-daemon` or `snap install avahi`.
+> To make DNS-SD discovery work, the host also needs to have a running avahi-daemon which can be installed with `sudo apt install avahi-daemon` or `sudo snap install avahi`.
+
+
+> **Note**  
+> On **Ubuntu Core**, the `avahi-control` interface is not provided by the system. Instead, it depends on the Avahi snap.
+> To use the `avahi-control` interface from `avahi` snap, run:
+> ```bash
+> sudo snap connect matter-pi-gpio-commander:avahi-control avahi:avahi-control
+> ```
 
 #### GPIO
 The [`gpio-memory-control`](https://snapcraft.io/docs/gpio-memory-control-interface) grants access to all GPIO memory.
@@ -84,23 +92,14 @@ For the following examples, we use the [Chip Tool snap](https://snapcraft.io/chi
 ### Commissioning
 
 ```bash
-sudo chip-tool pairing ethernet 110 20202021 3840 192.168.1.111 5540
+sudo snap connect chip-tool:avahi-observe
+sudo chip-tool pairing onnetwork 110 20202021
 ```
 
 where:
 
 -   `110` is the assigned node id
 -   `20202021` is the default passcode (pin code) for the lighting app
--   `3840` is the discriminator id
--   `192.168.1.111` is the IP address of the host for the lighting app
--   `5540` the the port for the lighting app
-
-Alternatively, to commission with discovery which works with DNS-SD:
-
-```bash
-sudo snap connect chip-tool:avahi-observe
-sudo chip-tool pairing onnetwork 110 20202021
-```
 
 ### Command
 

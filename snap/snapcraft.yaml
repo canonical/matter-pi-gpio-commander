@@ -12,7 +12,7 @@ confinement: strict
 base: core22
 architectures:
   - build-on: arm64
-  - build-on: armhf
+  # - build-on: armhf
   # - build-on: amd64
 
 layout:
@@ -48,7 +48,7 @@ parts:
     plugin: nil
     source: https://github.com/project-chip/connectedhomeip.git
     source-depth: 1
-    source-tag: v1.0.0.2
+    source-tag: v1.1.0.1
     source-submodules: []
     override-pull: |
       craftctl default
@@ -79,11 +79,36 @@ parts:
       # Replace key-value store path:
       sed -i 's/\/tmp/\/mnt/g' src/platform/Linux/CHIPPlatformConfig.h
 
+      # Install NodeJS and ZAP tool for arm builds
+      if [[ $SNAP_ARCH == "arm64" ]]; then
+        set -x
+
+        # Install node and npm
+        NODE_VERSION=v18.16.1
+        wget https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-linux-arm64.tar.xz
+        mkdir -p /usr/local/lib/nodejs
+        tar -xJf node-$NODE_VERSION-linux-arm64.tar.xz -C /usr/local/lib/nodejs 
+        export PATH=/usr/local/lib/nodejs/node-$NODE_VERSION-linux-arm64/bin:$PATH
+
+        # Install ZAP
+        ZAP_VERSION=v2023.05.04
+        rm -fr /opt/zap-${ZAP_VERSION}
+        mkdir /opt/zap-${ZAP_VERSION}
+        git clone --depth=1 --branch=${ZAP_VERSION} https://github.com/project-chip/zap.git /opt/zap-${ZAP_VERSION}
+        cd /opt/zap-${ZAP_VERSION}
+        npm install
+
+        export ZAP_DEVELOPMENT_PATH=/opt/zap-${ZAP_VERSION}
+      fi
+
+      cd $CRAFT_PART_BUILD
+      cd ../../connectedhomeip/src
+
       # To avoid unrelated activation errors, don't treat unset variables as error
       set +u
       source scripts/activate.sh
       set -u
-      
+
       cd examples/lighting-app/linux/
 
       # Copy and replace the application files
@@ -114,6 +139,12 @@ parts:
       - libcairo2-dev
       - libreadline-dev
       - generate-ninja
+      - build-essential 
+      - libpango1.0-dev 
+      - libjpeg-dev 
+      - libgif-dev 
+      - librsvg2-dev
+      - wget
 
   local-bin:
     plugin: nil
