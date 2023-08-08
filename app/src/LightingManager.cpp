@@ -46,9 +46,9 @@ CHIP_ERROR LightingManager::Init()
     wiringPiSetupGpio();
     pinMode(gpio, OUTPUT);
     
-    // initialize both the stored and actual states to on
-    mState = kState_On;
-    digitalWrite(gpio, HIGH);
+    // initialize both the stored and actual states to off
+    mState = kState_Off;
+    digitalWrite(gpio, LOW);
 
     return CHIP_NO_ERROR;
 }
