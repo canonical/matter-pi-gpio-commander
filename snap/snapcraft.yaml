@@ -169,7 +169,6 @@ apps:
       - bin/load-snap-options.sh
     command: bin/run.sh
     install-mode: disable
-    restart-delay: 10s
     plugs:
       - network
       - network-bind
