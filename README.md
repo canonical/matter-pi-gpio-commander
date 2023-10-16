@@ -5,6 +5,8 @@ This small application can turn your Raspberry Pi into a Matter lighting device.
 
 The application is based on [CHIP's Linux Lighting App](https://github.com/project-chip/connectedhomeip/tree/master/examples/lighting-app/linux) example. It used the [WiringPi](https://github.com/WiringPi/WiringPi) library to control the GPIO of Raspberry Pi.
 
+Usage instructions are available below and on the **[wiki](https://github.com/canonical/matter-pi-gpio-commander/wiki)**.
+
 ## Install
 
 ```bash
