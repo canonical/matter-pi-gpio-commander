@@ -15,6 +15,14 @@ architectures:
   # - build-on: armhf
   # - build-on: amd64
 
+plugs:
+  # This adds the needed security policy for the communication with 
+  # OpenThread Border Router snap (https://snapcraft.io/openthread-border-router)
+  dbus-otbr-wpan0:
+    interface: dbus
+    bus: system
+    name: io.openthread.BorderRouter.wpan0
+
 layout:
   /mnt:
     bind: $SNAP_COMMON/mnt
@@ -176,6 +184,8 @@ apps:
       - bluez
       - avahi-control
       - gpio-memory-control
+      - dbus-otbr-wpan0
+
   help:
     command: bin/lighting-app -h
 
