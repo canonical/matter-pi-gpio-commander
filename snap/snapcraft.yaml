@@ -1,5 +1,5 @@
 name: matter-pi-gpio-commander
-version: "1.0.0"
+version: "1.0.1"
 summary: Raspberry Pi GPIO as a Matter lighting app
 description: Refer to https://snapcraft.io/matter-pi-gpio-commander
 
@@ -48,7 +48,8 @@ parts:
     plugin: nil
     source: https://github.com/project-chip/connectedhomeip.git
     source-depth: 1
-    source-tag: v1.1.0.1
+    # source-tag: v1.1.0.1
+    source-commit: 6b01cb977127eb8547ce66d5b627061dc2dd6c90
     source-submodules: []
     override-pull: |
       craftctl default
@@ -59,7 +60,7 @@ parts:
     plugin: nil
     source: https://github.com/project-chip/zap.git
     source-depth: 1
-    source-tag: v2023.05.04
+    source-tag: v2023.09.28
     build-environment:
       - NODE_VERSION: v18.16.1
     build-packages:
