@@ -51,6 +51,8 @@ GENERAL OPTIONS
   ...
 ```
 
+For enabling Thread management, the application needs to have access to the OpenThread Border Router (OTBR) agent via DBus. For using the OTBR snap, refer to [Thread](#Thread).
+
 ### Grant access
 The snap uses [interfaces](https://snapcraft.io/docs/interface-management) to allow access to external resources. Depending on the use case, you need to "connect" certain interfaces to grant the necessary access.
 #### DNS-SD
@@ -76,6 +78,14 @@ The [`gpio-memory-control`](https://snapcraft.io/docs/gpio-memory-control-interf
 
 ```bash
 sudo snap connect matter-pi-gpio-commander:gpio-memory-control
+```
+
+#### Thread 
+The Thread management can be enabled with the help of a running OpenThread Border Router (OTBR) agent reachable via DBus. To do this via the [OTBR snap](https://snapcraft.io/openthread-border-router), install the snap and connect the following interface:
+
+```bash
+sudo snap connect matter-pi-gpio-commander:otbr-dbus-wpan0 \
+                  openthread-border-router:dbus-wpan0
 ```
 
 ### Run
