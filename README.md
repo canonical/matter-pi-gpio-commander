@@ -27,11 +27,6 @@ By default, the lighting app runs as a service without any CLI flags.
 The snap allows passing flags to the service via the `args` snap option. 
 This is useful for overriding SDK defaults to customize the application behavior.
 
-For example, to set the `--wifi --passcode 1234` flags:
-```
-snap set matter-pi-gpio-commander args="--wifi --passcode 1234"
-```
-
 To see the list of all flags and SDK default, run the `help` app:
 ```
 $ matter-pi-gpio-commander.help
@@ -49,9 +44,27 @@ GENERAL OPTIONS
        Enable Thread management via ot-agent.
 
   ...
+
 ```
 
-For enabling Thread management, the application needs to have access to the OpenThread Border Router (OTBR) agent via DBus. For using the OTBR snap, refer to [Thread](#Thread).
+For example, to set Passcode for commissioning:
+```bash
+sudo snap set matter-pi-gpio-commander args="--passcode 1234"
+```
+
+For enabling Thread management:
+```bash
+sudo snap set matter-pi-gpio-commander args="--thread"
+```
+
+For setting multiple flags, concatenate the arguments and set them together:
+```bash
+sudo snap set matter-pi-gpio-commander args="--thread --ble-device 1"
+```
+
+> **Note**  
+> For Thread management, the application needs to have access to the OpenThread Border Router (OTBR) agent via DBus.
+> When using the [OTBR Snap], this can be achieved by installing the snap and granting the necessary rights; refer to [Thread](#Thread).
 
 ### Grant access
 The snap uses [interfaces](https://snapcraft.io/docs/interface-management) to allow access to external resources. Depending on the use case, you need to "connect" certain interfaces to grant the necessary access.
@@ -81,7 +94,7 @@ sudo snap connect matter-pi-gpio-commander:gpio-memory-control
 ```
 
 #### Thread 
-The Thread management can be enabled with the help of a running OpenThread Border Router (OTBR) agent reachable via DBus. To do this via the [OTBR snap](https://snapcraft.io/openthread-border-router), install the snap and connect the following interface:
+To allow communication with the [OTBR Snap] for Thread management, connect the following interface:
 
 ```bash
 sudo snap connect matter-pi-gpio-commander:otbr-dbus-wpan0 \
@@ -152,3 +165,6 @@ Then, run it via `sudo snap run matter-pi-gpio-commander.test-blink` snap comman
 ```bash
 sudo matter-pi-gpio-commander.test-blink
 ```
+
+<!-- References -->
+[OTBR Snap]: https://snapcraft.io/openthread-border-router
