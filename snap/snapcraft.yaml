@@ -69,12 +69,13 @@ parts:
         wget https://github.com/project-chip/zap/releases/download/$ZAP_VERSION/zap-linux-$SNAP_ARCH.zip
         unzip -o zap-linux-$SNAP_ARCH.zip
 
-        # Make the binary globally accessible
-        mv zap-cli /usr/local/bin/zap-cli
+        mkdir -p /bin && mv zap-cli /bin
 
         # Define the environment needed for the app build
-        echo "export ZAP_DEVELOPMENT_PATH=$PWD" >> env
-        cat env
+        echo "export ZAP_DEVELOPMENT_PATH=$PWD/bin" >> env
+        echo "export ZAP_INSTALL_PATH=$PWD/bin" >> env
+        echo "export PATH=$PWD/bin:$PATH" > env
+
       fi
 
   lighting:
