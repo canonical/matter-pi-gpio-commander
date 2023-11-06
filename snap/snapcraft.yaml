@@ -60,13 +60,12 @@ parts:
     build-environment:
       - ZAP_VERSION: v2023.09.28
     build-packages:
-      - build-essential 
       - wget
       - unzip
     override-build: |
       if [[ $SNAP_ARCH == "arm64" ]]; then
         # Download and unzip the prebuilt ZAP (Zigbee Cluster Library configuration tool and generator) binary for the ARM64 architecture
-        wget https://github.com/project-chip/zap/releases/download/$ZAP_VERSION/zap-linux-$SNAP_ARCH.zip
+        wget --no-verbose https://github.com/project-chip/zap/releases/download/$ZAP_VERSION/zap-linux-$SNAP_ARCH.zip
         unzip -o zap-linux-$SNAP_ARCH.zip
 
         # Define the environment needed for the app build
