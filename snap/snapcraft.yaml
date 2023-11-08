@@ -1,5 +1,5 @@
 name: matter-pi-gpio-commander
-version: "1.0.0"
+version: "1.0.1"
 summary: Raspberry Pi GPIO as a Matter lighting app
 description: Refer to https://snapcraft.io/matter-pi-gpio-commander
 
@@ -14,6 +14,14 @@ architectures:
   - build-on: arm64
   # - build-on: armhf
   # - build-on: amd64
+
+plugs:
+  # This is to communicate with the OpenThread Border Router snap (https://snapcraft.io/openthread-border-router)
+  # when enabling Thread on this application.
+  otbr-dbus-wpan0:
+    interface: dbus
+    bus: system
+    name: io.openthread.BorderRouter.wpan0
 
 layout:
   /mnt:
@@ -160,6 +168,8 @@ apps:
       - bluez
       - avahi-control
       - gpio-memory-control
+      - otbr-dbus-wpan0
+
   help:
     command: bin/lighting-app -h
 
