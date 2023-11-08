@@ -48,7 +48,7 @@ parts:
     plugin: nil
     source: https://github.com/project-chip/connectedhomeip.git
     source-depth: 1
-    source-tag: v1.1.0.1
+    source-tag: v1.2.0.1
     source-submodules: []
     override-pull: |
       craftctl default
@@ -58,7 +58,7 @@ parts:
   zap:
     plugin: nil
     build-environment:
-      - ZAP_VERSION: v2023.09.28
+      - ZAP_VERSION: v2023.10.24-nightly
     build-packages:
       - wget
       - unzip

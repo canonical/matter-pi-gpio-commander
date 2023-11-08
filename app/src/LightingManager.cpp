@@ -1,4 +1,10 @@
 /*
+ * This file contains partial code copied from:
+ * https://github.com/project-chip/connectedhomeip/blob/v1.2.0.1/examples/lighting-app/lighting-common/src/LightingManager.cpp
+ */
+
+
+/*
  *
  *    Copyright (c) 2020 Project CHIP Authors
  *    Copyright (c) 2019 Google LLC.
@@ -87,12 +93,12 @@ bool LightingManager::InitiateAction(Action_t aAction)
     if (mState == kState_Off && aAction == ON_ACTION)
     {
         action_initiated = true;
-        new_state = kState_On;
+        new_state        = kState_On;
     }
     else if (mState == kState_On && aAction == OFF_ACTION)
     {
         action_initiated = true;
-        new_state = kState_Off;
+        new_state        = kState_Off;
     }
 
     if (action_initiated)
