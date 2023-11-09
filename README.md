@@ -27,11 +27,6 @@ By default, the lighting app runs as a service without any CLI flags.
 The snap allows passing flags to the service via the `args` snap option. 
 This is useful for overriding SDK defaults to customize the application behavior.
 
-For example, to set the `--wifi --passcode 1234` flags:
-```
-snap set matter-pi-gpio-commander args="--wifi --passcode 1234"
-```
-
 To see the list of all flags and SDK default, run the `help` app:
 ```
 $ matter-pi-gpio-commander.help
@@ -49,10 +44,32 @@ GENERAL OPTIONS
        Enable Thread management via ot-agent.
 
   ...
+
 ```
+
+For example, to set Passcode for commissioning:
+```bash
+sudo snap set matter-pi-gpio-commander args="--passcode 1234"
+```
+
+For enabling Thread management:
+```bash
+sudo snap set matter-pi-gpio-commander args="--thread"
+```
+
+> **Note**  
+> For Thread management, the application needs to have access to the OpenThread Border Router (OTBR) agent via DBus.
+> When using the [OTBR Snap], this can be achieved by installing the snap and granting the necessary rights; refer to [Thread](#Thread).
+
+For setting multiple flags, concatenate the arguments and set them together:
+```bash
+sudo snap set matter-pi-gpio-commander args="--thread --ble-device 1"
+```
+
 
 ### Grant access
 The snap uses [interfaces](https://snapcraft.io/docs/interface-management) to allow access to external resources. Depending on the use case, you need to "connect" certain interfaces to grant the necessary access.
+
 #### DNS-SD
 The [avahi-control](https://snapcraft.io/docs/avahi-control-interface) is necessary to allow discovery of the application via DNS-SD:
 
@@ -61,12 +78,12 @@ sudo snap connect matter-pi-gpio-commander:avahi-control
 ```
 
 > **Note**  
-> To make DNS-SD discovery work, the host also needs to have a running avahi-daemon which can be installed with `sudo apt install avahi-daemon` or `sudo snap install avahi`.
+> To make DNS-SD discovery work, the host also needs to have a running avahi-daemon which can be installed with `sudo apt install avahi-daemon`.
 
 
 > **Note**  
-> On **Ubuntu Core**, the `avahi-control` interface is not provided by the system. Instead, it depends on the Avahi snap.
-> To use the `avahi-control` interface from `avahi` snap, run:
+> On **Ubuntu Core**, the `avahi-control` interface is not provided by the system. Instead, it depends on the [Avahi snap](https://snapcraft.io/avahi).
+> To use the interface from that snap, run:
 > ```bash
 > sudo snap connect matter-pi-gpio-commander:avahi-control avahi:avahi-control
 > ```
@@ -76,6 +93,31 @@ The [`gpio-memory-control`](https://snapcraft.io/docs/gpio-memory-control-interf
 
 ```bash
 sudo snap connect matter-pi-gpio-commander:gpio-memory-control
+```
+
+#### BLE
+To allow the device to advertise itself over Bluetooth Low Energy:
+```bash
+sudo snap connect matter-pi-gpio-commander:bluez
+```
+
+> **Note**  
+> BLE advertisement depends on BlueZ which can be installed with `sudo apt install bluez`.
+
+> **Note**  
+> On **Ubuntu Core**, the `bluez` interface is not provided by the system. 
+> The interface can instead be consumed from the [BlueZ snap](https://snapcraft.io/bluez):
+> ```bash
+> sudo snap connect matter-pi-gpio-commander:bluez bluez:service
+> ```
+
+
+#### Thread 
+To allow communication with the [OTBR Snap] for Thread management, connect the following interface:
+
+```bash
+sudo snap connect matter-pi-gpio-commander:otbr-dbus-wpan0 \
+                  openthread-border-router:dbus-wpan0
 ```
 
 ### Run
@@ -142,3 +184,6 @@ Then, run it via `sudo snap run matter-pi-gpio-commander.test-blink` snap comman
 ```bash
 sudo matter-pi-gpio-commander.test-blink
 ```
+
+<!-- References -->
+[OTBR Snap]: https://snapcraft.io/openthread-border-router
