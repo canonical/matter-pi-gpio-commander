@@ -93,12 +93,12 @@ bool LightingManager::InitiateAction(Action_t aAction)
     if (mState == kState_Off && aAction == ON_ACTION)
     {
         action_initiated = true;
-        new_state        = kState_On;
+        new_state = kState_On;
     }
     else if (mState == kState_On && aAction == OFF_ACTION)
     {
         action_initiated = true;
-        new_state        = kState_Off;
+        new_state = kState_Off;
     }
 
     if (action_initiated)
