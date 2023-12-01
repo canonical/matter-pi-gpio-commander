@@ -117,11 +117,11 @@ parts:
       source scripts/activate.sh
       set -u
 
-      cd examples/lighting-app/linux/
-
       # Copy and replace the application files
-      cp -vr $CRAFT_PART_BUILD/* .
+      cp -vr $CRAFT_PART_BUILD/lighting-common/* examples/lighting-app/lighting-common/
+      cp -vr $CRAFT_PART_BUILD/linux/* examples/lighting-app/linux
 
+      cd examples/lighting-app/linux
       gn gen out/build
       ninja -C out/build
 
