@@ -1,4 +1,10 @@
 /*
+ * This file contains partial code copied from:
+ * https://github.com/project-chip/connectedhomeip/blob/v1.2.0.1/examples/lighting-app/lighting-common/src/LightingManager.cpp
+ */
+
+
+/*
  *
  *    Copyright (c) 2020 Project CHIP Authors
  *    Copyright (c) 2019 Google LLC.

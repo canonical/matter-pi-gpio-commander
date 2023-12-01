@@ -1,4 +1,9 @@
 /*
+ * This file is copied from: 
+ * https://github.com/project-chip/connectedhomeip/blob/v1.2.0.1/examples/lighting-app/lighting-common/include/LightingManager.h
+ */
+
+/*
  *
  *    Copyright (c) 2020 Project CHIP Authors
  *    All rights reserved.
