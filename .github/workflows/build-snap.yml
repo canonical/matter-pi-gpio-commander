@@ -11,17 +11,28 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: 
+          - arm64
     steps:
         
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build snap
-        uses: snapcore/action-build@v1
-        id: build
+      - name: Setub QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: ${{ matrix.platform }}
 
+      - name: Build snap for arm64
+        uses: diddlesnaps/snapcraft-multiarch-action@v1
+        id: build
+        with:
+          architecture: ${{ matrix.platform }}
+      
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ steps.build.outputs.snap }}
+          name: matter-pi-gpio-commander_${{ github.run_number}}_arm64.snap
           path: ${{ steps.build.outputs.snap }}
