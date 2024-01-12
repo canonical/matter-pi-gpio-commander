@@ -32,7 +32,7 @@ jobs:
           architecture: ${{ matrix.platform }}
       
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: matter-pi-gpio-commander_${{ github.run_number}}_${{ matrix.platform }}.snap
           path: ${{ steps.build.outputs.snap }}
