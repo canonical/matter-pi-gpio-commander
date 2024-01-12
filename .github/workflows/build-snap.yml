@@ -20,7 +20,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setub QEMU
+      - name: Setup QEMU
         uses: docker/setup-qemu-action@v2
         with:
           platforms: ${{ matrix.platform }}
