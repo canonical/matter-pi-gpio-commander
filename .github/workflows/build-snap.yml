@@ -34,5 +34,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: matter-pi-gpio-commander_${{ github.run_number}}_arm64.snap
+          name: matter-pi-gpio-commander_${{ github.run_number}}_${{ matrix.platform }}.snap
           path: ${{ steps.build.outputs.snap }}
