@@ -4,19 +4,31 @@
 // Build:
 // g++ -Wall test-blink.cpp -lwiringPi -o test-blink
 
-#include <wiringPi.h>
+#include <gpiod>
 #include <cstdlib>
 #include <iostream>
 #include <cstring>
 
-#define GPIO "GPIO"
+#define GPIO "line"
+#define CHIP "gpiochip"
+
+void setLineValue(struct gpiod_line *line, int value);
 
 int main(void)
 {
+    struct gpiod_line *line;
+
     char *envGPIO = std::getenv(GPIO);
     if (envGPIO == NULL || strlen(envGPIO) == 0)
     {
         std::cout << "Environment variable not set or empty: " << GPIO << std::endl;
+        return 1;
+    }
+
+    char *envCHIP = std::getenv(CHIP);
+    if (envCHIP == NULL || strlen(envCHIP) == 0)
+    {
+        std::cout << "Environment variable not set or empty: " << CHIP << std::endl;
         return 1;
     }
 
@@ -32,19 +44,50 @@ int main(void)
         return 1;
     }
 
-    wiringPiSetupGpio();
-    pinMode(gpio, OUTPUT);
+    // Setup GPIO with libgpiod
+    struct gpiod_chip *chip;
+
+    std::string chipPath = "/dev/gpiochip" + std::string(envCHIP);
+    chip = gpiod_chip_open(chipPath.c_str());
+    if (!chip)
+    {
+        std::cerr << "Failed to open gpiochip: /dev/gpiochip" << envCHIP << std::endl;
+        return 1;
+    }
+
+    line = gpiod_chip_get_line(chip, gpio);
+    if (!line)
+    {
+        std::cerr << "Failed to get line! Output code: " << envGPIO << std::endl;
+        return 1;
+    }
+
+    int ret = gpiod_line_request_output(line, CONSUMER, 0);
+    if (ret < 0)
+    {
+        std::cerr << "Request line as output failed! Output code: " << ret << std::endl;
+        return 1;
+    }
 
     for (;;)
     {
-        digitalWrite(gpio, HIGH);
+        setLineValue(&line, 1);
         std::cout << "On" << std::endl;
         delay(500);
 
-        digitalWrite(gpio, LOW);
+        setLineValue(&line, 0);
         std::cout << "Off" << std::endl;
         delay(500);
     }
 
     return 0;
+}
+
+void setLineValue(struct gpiod_line *line, int value)
+{
+   int ret = gpiod_line_set_value(line, value);
+   if(ret < 0)
+   {
+        std::cerr << "Failed to set line to " << value << "! Output code: " << ret << std::endl;
+   }
 }

@@ -110,7 +110,7 @@ executable("chip-lighting-app") {
     cflags = [ "-Wconversion" ]
   }
 
-  libs = [ "wiringPi" ]
+  libs = [ "gpiod" ]
 
   output_dir = root_out_dir
 }

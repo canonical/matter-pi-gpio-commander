@@ -3,7 +3,6 @@
  * https://github.com/project-chip/connectedhomeip/blob/v1.2.0.1/examples/lighting-app/lighting-common/src/LightingManager.cpp
  */
 
-
 /*
  *
  *    Copyright (c) 2020 Project CHIP Authors
@@ -26,7 +25,8 @@
 #include "LightingManager.h"
 
 #include <lib/support/logging/CHIPLogging.h>
-#include <wiringPi.h>
+#include <gpiod.h>
+#include <unistd.h>
 #include <cstdlib>
 #include <iostream>
 #include <cstring>
@@ -34,7 +34,12 @@
 LightingManager LightingManager::sLight;
 
 #define GPIO "GPIO"
+#define CHIP "gpiochip"
+#define CONSUMER "Lighting_Manager"
+
 static int gpio;
+static int chip;
+static struct gpiod_line *line;
 
 CHIP_ERROR LightingManager::Init()
 {
@@ -45,13 +50,41 @@ CHIP_ERROR LightingManager::Init()
 
         return CHIP_ERROR_INVALID_ARGUMENT;
     }
+
+    char *envCHIP = std::getenv(CHIP);
+    if (envCHIP == NULL || strlen(envCHIP) == 0)
+    {
+        ChipLogError(AppServer, "Environment variable not set or empty: %s", CHIP);
+
+        return CHIP_ERROR_INVALID_ARGUMENT;
+    }
+
     ChipLogProgress(AppServer, "Using GPIO %s", envGPIO);
 
     gpio = std::stoi(envGPIO);
 
-    wiringPiSetupGpio();
-    pinMode(gpio, OUTPUT);
-    
+    struct gpiod_chip *chip;
+    chip = gpiod_chip_open("/dev/gpiochip" + envCHIP);
+    if (!chip)
+    {
+        ChipLogError(AppServer, "Failed to open gpiochip: /dev/gpiochip%s", envCHIP);
+        return CHIP_ERROR_INTERNAL;
+    }
+
+    line = gpiod_chip_get_line(chip, gpio);
+    if (!line)
+    {
+        ChipLogError(AppServer, "Failed to get line: %s", envGPIO);
+        return CHIP_ERROR_INTERNAL;
+    }
+
+    int ret = gpiod_line_request_output(line, CONSUMER, 0);
+    if (ret < 0)
+    {
+        ChipLogError(AppServer, "Request line as output failed! Ouput code: %d", ret);
+        return CHIP_ERROR_INTERNAL;
+    }
+
     // initialize both the stored and actual states to off
     mState = kState_Off;
     digitalWrite(gpio, LOW);
@@ -121,14 +154,39 @@ bool LightingManager::InitiateAction(Action_t aAction)
 
 void LightingManager::Set(bool aOn)
 {
+    int ret;
     if (aOn)
     {
         mState = kState_On;
-        digitalWrite(gpio, HIGH);
+        ret = gpiod_line_set_value(line, 1);
+        if(ret < 0)
+        {
+            ChipLogError(AppServer, "Failed to set line to value: %d", ret);
+        }
     }
     else
     {
         mState = kState_Off;
-        digitalWrite(gpio, LOW);
+        ret = gpiod_line_set_value(line, 0);
+        if(ret < 0)
+        {
+            ChipLogError(AppServer, "Failed to set line to value: %d", ret);
+        }
+
     }
+}
+
+void LightingManager::Set(bool aOn)
+{
+   mState = aOn ? kState_On : kState_Off;
+   SetLineValue(aOn ? 1 : 0);
+}
+
+void LightingManager::SetLineValue(int value)
+{
+   int ret = gpiod_line_set_value(line, value);
+   if(ret < 0)
+   {
+       ChipLogError(AppServer, "Failed to set line to value: %d", ret);
+   }
 }

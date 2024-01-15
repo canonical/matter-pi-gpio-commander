@@ -26,27 +26,32 @@ layout:
     bind: $SNAP_COMMON/mnt
 
 parts:
-  wiring-pi:
+  gpiod:
     plugin: nil
-    source: https://github.com/WiringPi/WiringPi.git
+    source: https://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git
     source-depth: 1
-    source-tag: 2.61-1
+    source-tag: v2.1
     override-build: |
-      WIRINGPI_SUDO="" ./build
-
       mkdir -p $CRAFT_PART_INSTALL/lib
-      cp -v /usr/local/lib/libwiringPi.so* $CRAFT_PART_INSTALL/lib/
-
-      mkdir -p $CRAFT_PART_INSTALL/usr/share/doc/libwiringPi
-      cp COPYING.LESSER $CRAFT_PART_INSTALL/usr/share/doc/libwiringPi/
-    build-packages: [git, gcc, g++]
+      ./autogen.sh --enable-tools=yes --prefix=$CRAFT_PART_INSTALL/lib
+      make -j$(nproc)
+      make install
+    build-packages: 
+      - git 
+      - gcc
+      - g++
+      - pkg-config 
+      - autotools-dev
+      - autoconf
+      - automake
+      - libgpiod-dev
 
   test-blink:
-    after: [wiring-pi]
+    after: [gpiod]
     plugin: nil
     source: .
     override-build: |
-      g++ -Wall test-blink.cpp -lwiringPi -o test-blink
+      g++ -Wall test-blink.cpp -lgpiod -o test-blink
       mkdir -p $CRAFT_PART_INSTALL/bin
       cp test-blink $CRAFT_PART_INSTALL/bin/
   
@@ -80,7 +85,7 @@ parts:
       fi
 
   lighting:
-    after: [wiring-pi, connectedhomeip, zap]
+    after: [gpiod, connectedhomeip, zap]
     plugin: nil
     source: app
     build-environment:
@@ -145,6 +150,7 @@ parts:
       - libcairo2-dev
       - libreadline-dev
       - generate-ninja
+      - libgpiod-dev 
 
   local-bin:
     plugin: nil
