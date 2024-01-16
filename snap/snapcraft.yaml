@@ -26,35 +26,18 @@ layout:
     bind: $SNAP_COMMON/mnt
 
 parts:
-  gpiod:
-    plugin: nil
-    source: https://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git
-    source-depth: 1
-    source-tag: v2.1
-    override-build: |
-      mkdir -p $CRAFT_PART_INSTALL/lib
-      ./autogen.sh --enable-tools=yes --prefix=$CRAFT_PART_INSTALL/lib
-      make -j$(nproc)
-      make install
-    build-packages: 
-      - git 
-      - gcc
-      - g++
-      - pkg-config 
-      - autotools-dev
-      - autoconf
-      - autoconf-archive
-      - automake
-      - libgpiod-dev
-
   test-blink:
-    after: [gpiod]
     plugin: nil
     source: .
     override-build: |
       g++ -Wall test-blink.cpp -lgpiod -o test-blink
       mkdir -p $CRAFT_PART_INSTALL/bin
       cp test-blink $CRAFT_PART_INSTALL/bin/
+    build-packages:
+      - g++
+      - gcc
+      - libgpiod-dev
+      - libgpiod2
   
   connectedhomeip:
     plugin: nil
@@ -86,7 +69,7 @@ parts:
       fi
 
   lighting:
-    after: [gpiod, connectedhomeip, zap]
+    after: [connectedhomeip, zap]
     plugin: nil
     source: app
     build-environment:
