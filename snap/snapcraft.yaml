@@ -43,6 +43,7 @@ parts:
       - pkg-config 
       - autotools-dev
       - autoconf
+      - autoconf-archive
       - automake
       - libgpiod-dev
 
