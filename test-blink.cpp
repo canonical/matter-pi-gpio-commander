@@ -1,13 +1,11 @@
-// Dependency:
-// https://github.com/WiringPi/WiringPi
-//
 // Build:
-// g++ -Wall test-blink.cpp -lwiringPi -o test-blink
+// g++ -Wall test-blink.cpp -lgpiod -o test-blink
 
-#include <gpiod>
+#include <gpiod.h>
 #include <cstdlib>
 #include <iostream>
 #include <cstring>
+#include <unistd.h>
 
 #define GPIO "line"
 #define CHIP "gpiochip"
@@ -71,13 +69,13 @@ int main(void)
 
     for (;;)
     {
-        setLineValue(&line, 1);
+        setLineValue(line, 1);
         std::cout << "On" << std::endl;
-        delay(500);
+        usleep(5000);
 
-        setLineValue(&line, 0);
+        setLineValue(line, 0);
         std::cout << "Off" << std::endl;
-        delay(500);
+        usleep(5000);
     }
 
     return 0;
