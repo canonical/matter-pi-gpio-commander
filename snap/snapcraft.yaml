@@ -39,128 +39,128 @@ parts:
       - libgpiod-dev
       - libgpiod2
   
-  connectedhomeip:
-    plugin: nil
-    source: https://github.com/project-chip/connectedhomeip.git
-    source-depth: 1
-    source-tag: master
-    source-submodules: []
-    override-pull: |
-      craftctl default
-      # shallow clone the submodules
-      scripts/checkout_submodules.py --shallow --platform linux
+  # connectedhomeip:
+  #   plugin: nil
+  #   source: https://github.com/project-chip/connectedhomeip.git
+  #   source-depth: 1
+  #   source-tag: master
+  #   source-submodules: []
+  #   override-pull: |
+  #     craftctl default
+  #     # shallow clone the submodules
+  #     scripts/checkout_submodules.py --shallow --platform linux
 
 
-  zap:
-    plugin: nil
-    build-environment:
-      - ZAP_VERSION: v2023.12.07
-    build-packages:
-      - wget
-      - unzip
-    override-build: |
-      if [[ $SNAP_ARCH == "arm64" ]]; then
-        # Download and unzip the prebuilt ZAP (Zigbee Cluster Library configuration tool and generator) binary for the ARM64 architecture
-        wget --no-verbose https://github.com/project-chip/zap/releases/download/$ZAP_VERSION/zap-linux-$SNAP_ARCH.zip
-        unzip -o zap-linux-$SNAP_ARCH.zip
+  # zap:
+  #   plugin: nil
+  #   build-environment:
+  #     - ZAP_VERSION: v2023.12.07
+  #   build-packages:
+  #     - wget
+  #     - unzip
+  #   override-build: |
+  #     if [[ $SNAP_ARCH == "arm64" ]]; then
+  #       # Download and unzip the prebuilt ZAP (Zigbee Cluster Library configuration tool and generator) binary for the ARM64 architecture
+  #       wget --no-verbose https://github.com/project-chip/zap/releases/download/$ZAP_VERSION/zap-linux-$SNAP_ARCH.zip
+  #       unzip -o zap-linux-$SNAP_ARCH.zip
 
-        # Define the environment needed for the app build
-        echo "export ZAP_INSTALL_PATH=$PWD" >> env
-      fi
+  #       # Define the environment needed for the app build
+  #       echo "export ZAP_INSTALL_PATH=$PWD" >> env
+  #     fi
 
-  lighting:
-    after: [connectedhomeip, zap]
-    plugin: nil
-    source: app
-    build-environment:
-      - ZAP_ENV: ../../zap/build/env
-    override-build: |
-      # Setup ZAP paths; installed in the corresponding part
-      test -f $ZAP_ENV && source $ZAP_ENV
+  # lighting:
+  #   after: [connectedhomeip, zap]
+  #   plugin: nil
+  #   source: app
+  #   build-environment:
+  #     - ZAP_ENV: ../../zap/build/env
+  #   override-build: |
+  #     # Setup ZAP paths; installed in the corresponding part
+  #     test -f $ZAP_ENV && source $ZAP_ENV
       
-      # Change to SDK's directory to allow caching of the activation
-      # regardless of this part's pull and build status.
-      cd ../../connectedhomeip/src
+  #     # Change to SDK's directory to allow caching of the activation
+  #     # regardless of this part's pull and build status.
+  #     cd ../../connectedhomeip/src
 
-      # The project writes its data to /tmp which isn't persisted.
-      #
-      # There is currently has no known way of overriding the default paths to
-      #   both storage and security config files.
-      #
-      # Snap does not allow bind-mounting a persistent directory on /tmp, 
-      #  so we need to first replace it in the source with another path, i.e. /mnt.
-      # See the top-level layout definition which bind-mounts a persisted
-      #   directory within the confined snap space on /mnt.
-      #
-      # Replace storage paths:
-      sed -i 's/\/tmp/\/mnt/g' src/platform/Linux/CHIPLinuxStorage.h
-      # Replace key-value store path:
-      sed -i 's/\/tmp/\/mnt/g' src/platform/Linux/CHIPPlatformConfig.h
+  #     # The project writes its data to /tmp which isn't persisted.
+  #     #
+  #     # There is currently has no known way of overriding the default paths to
+  #     #   both storage and security config files.
+  #     #
+  #     # Snap does not allow bind-mounting a persistent directory on /tmp, 
+  #     #  so we need to first replace it in the source with another path, i.e. /mnt.
+  #     # See the top-level layout definition which bind-mounts a persisted
+  #     #   directory within the confined snap space on /mnt.
+  #     #
+  #     # Replace storage paths:
+  #     sed -i 's/\/tmp/\/mnt/g' src/platform/Linux/CHIPLinuxStorage.h
+  #     # Replace key-value store path:
+  #     sed -i 's/\/tmp/\/mnt/g' src/platform/Linux/CHIPPlatformConfig.h
 
-      cd $CRAFT_PART_BUILD
-      cd ../../connectedhomeip/src
+  #     cd $CRAFT_PART_BUILD
+  #     cd ../../connectedhomeip/src
 
-      # To avoid unrelated activation errors, don't treat unset variables as error
-      set +u
-      source scripts/activate.sh
-      set -u
+  #     # To avoid unrelated activation errors, don't treat unset variables as error
+  #     set +u
+  #     source scripts/activate.sh
+  #     set -u
 
-      # Copy and replace the application files
-      cp -vr $CRAFT_PART_BUILD/lighting-common/* examples/lighting-app/lighting-common/
-      cp -vr $CRAFT_PART_BUILD/linux/* examples/lighting-app/linux
+  #     # Copy and replace the application files
+  #     cp -vr $CRAFT_PART_BUILD/lighting-common/* examples/lighting-app/lighting-common/
+  #     cp -vr $CRAFT_PART_BUILD/linux/* examples/lighting-app/linux
 
-      cd examples/lighting-app/linux
-      gn gen out/build
-      ninja -C out/build
+  #     cd examples/lighting-app/linux
+  #     gn gen out/build
+  #     ninja -C out/build
 
-      ldd out/build/chip-lighting-app
+  #     ldd out/build/chip-lighting-app
       
-      mkdir -p $CRAFT_PART_INSTALL/bin
-      cp out/build/chip-lighting-app $CRAFT_PART_INSTALL/bin/lighting-app        
-    build-packages:
-      - git
-      - gcc
-      - g++
-      - pkg-config
-      - libssl-dev
-      - libdbus-1-dev
-      - libglib2.0-dev
-      - libavahi-client-dev
-      - ninja-build
-      - python3-venv
-      - python3-dev
-      - python3-pip
-      - libgirepository1.0-dev
-      - libcairo2-dev
-      - libreadline-dev
-      - generate-ninja
-      - libgpiod-dev 
+  #     mkdir -p $CRAFT_PART_INSTALL/bin
+  #     cp out/build/chip-lighting-app $CRAFT_PART_INSTALL/bin/lighting-app        
+  #   build-packages:
+  #     - git
+  #     - gcc
+  #     - g++
+  #     - pkg-config
+  #     - libssl-dev
+  #     - libdbus-1-dev
+  #     - libglib2.0-dev
+  #     - libavahi-client-dev
+  #     - ninja-build
+  #     - python3-venv
+  #     - python3-dev
+  #     - python3-pip
+  #     - libgirepository1.0-dev
+  #     - libcairo2-dev
+  #     - libreadline-dev
+  #     - generate-ninja
+  #     - libgpiod-dev 
 
-  local-bin:
-    plugin: nil
-    source: snap/local/bin/
-    override-build: |
-      mkdir -p $CRAFT_PART_INSTALL/bin
-      cp -v run.sh $CRAFT_PART_INSTALL/bin/
-      cp -v load-snap-options.sh $CRAFT_PART_INSTALL/bin/
+  # local-bin:
+  #   plugin: nil
+  #   source: snap/local/bin/
+  #   override-build: |
+  #     mkdir -p $CRAFT_PART_INSTALL/bin
+  #     cp -v run.sh $CRAFT_PART_INSTALL/bin/
+  #     cp -v load-snap-options.sh $CRAFT_PART_INSTALL/bin/
 
 apps:
-  lighting:
-    daemon: simple
-    command-chain:
-      - bin/load-snap-options.sh
-    command: bin/run.sh
-    install-mode: disable
-    plugs:
-      - network
-      - network-bind
-      - bluez
-      - avahi-control
-      - gpio-memory-control
-      - otbr-dbus-wpan0
+  # lighting:
+  #   daemon: simple
+  #   command-chain:
+  #     - bin/load-snap-options.sh
+  #   command: bin/run.sh
+  #   install-mode: disable
+  #   plugs:
+  #     - network
+  #     - network-bind
+  #     - bluez
+  #     - avahi-control
+  #     - gpio-memory-control
+  #     - otbr-dbus-wpan0
 
-  help:
-    command: bin/lighting-app -h
+  # help:
+  #   command: bin/lighting-app -h
 
   # This app is to test the GPIO control without using a Matter controller
   test-blink:
