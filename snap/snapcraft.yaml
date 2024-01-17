@@ -136,13 +136,13 @@ parts:
   #     - generate-ninja
   #     - libgpiod-dev 
 
-  # local-bin:
-  #   plugin: nil
-  #   source: snap/local/bin/
-  #   override-build: |
-  #     mkdir -p $CRAFT_PART_INSTALL/bin
-  #     cp -v run.sh $CRAFT_PART_INSTALL/bin/
-  #     cp -v load-snap-options.sh $CRAFT_PART_INSTALL/bin/
+  local-bin:
+    plugin: nil
+    source: snap/local/bin/
+    override-build: |
+      mkdir -p $CRAFT_PART_INSTALL/bin
+      cp -v run.sh $CRAFT_PART_INSTALL/bin/
+      cp -v load-snap-options.sh $CRAFT_PART_INSTALL/bin/
 
 apps:
   # lighting:

@@ -9,6 +9,7 @@
 
 #define GPIO "line"
 #define CHIP "gpiochip"
+#define CONSUMER "test-blink"
 
 void setLineValue(struct gpiod_line *line, int value);
 
