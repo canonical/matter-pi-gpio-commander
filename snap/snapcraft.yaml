@@ -30,7 +30,7 @@ parts:
     plugin: nil
     source: .
     override-build: |
-      g++ -Wall test-blink.cpp -lgpiod -o test-blink
+      g++ -Wall test-blink.cpp -lgpiod -o test-blink -static
       mkdir -p $CRAFT_PART_INSTALL/bin
       cp test-blink $CRAFT_PART_INSTALL/bin/
     build-packages:
@@ -168,4 +168,4 @@ apps:
       - bin/load-snap-options.sh
     command: bin/test-blink
     plugs:
-      - gpio-memory-control
+      - gpio
