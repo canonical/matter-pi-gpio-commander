@@ -8,7 +8,6 @@
 #include <unistd.h>
 
 #define GPIO "line"
-#define CHIP "gpiochip"
 #define CONSUMER "test-blink"
 
 void setLineValue(struct gpiod_line *line, int value);
@@ -21,13 +20,6 @@ int main(void)
     if (envGPIO == NULL || strlen(envGPIO) == 0)
     {
         std::cout << "Environment variable not set or empty: " << GPIO << std::endl;
-        return 1;
-    }
-
-    char *envCHIP = std::getenv(CHIP);
-    if (envCHIP == NULL || strlen(envCHIP) == 0)
-    {
-        std::cout << "Environment variable not set or empty: " << CHIP << std::endl;
         return 1;
     }
 
@@ -46,11 +38,10 @@ int main(void)
     // Setup GPIO with libgpiod
     struct gpiod_chip *chip;
 
-    std::string chipPath = "/dev/gpiochip" + std::string(envCHIP);
-    chip = gpiod_chip_open(chipPath.c_str());
+    chip = gpiod_chip_open("/dev/gpiochip0");
     if (!chip)
     {
-        std::cerr << "Failed to open gpiochip: /dev/gpiochip" << envCHIP << std::endl;
+        std::cerr << "Failed to open gpiochip: /dev/gpiochip0" << std::endl;
         return 1;
     }
 
