@@ -22,9 +22,9 @@ plugs:
     name: io.openthread.BorderRouter.wpan0
 
   # Uses system-files snap interface to access the gpiochip0
-  edev-gpiochip0:
+  dev-gpiochip0:
     interface: system-files
-    read:
+    write:
     - /dev/gpiochip0
 
 layout:
@@ -49,7 +49,7 @@ parts:
   #   plugin: nil
   #   source: https://github.com/project-chip/connectedhomeip.git
   #   source-depth: 1
-  #   source-tag: master
+  #   source-tag: v1.2.0.1
   #   source-submodules: []
   #   override-pull: |
   #     craftctl default
@@ -162,7 +162,7 @@ apps:
   #     - network-bind
   #     - bluez
   #     - avahi-control
-  #     - gpio-memory-control
+  #     - dev-gpiochip0
   #     - otbr-dbus-wpan0
 
   # help:
