@@ -7,7 +7,7 @@
 #include <cstring>
 #include <unistd.h>
 
-#define GPIO "line"
+#define GPIO "GPIO"
 #define CONSUMER "test-blink"
 
 void setLineValue(struct gpiod_line *line, int value);
@@ -63,11 +63,11 @@ int main(void)
     {
         setLineValue(line, 1);
         std::cout << "On" << std::endl;
-        usleep(5000);
+        usleep(500000);
 
         setLineValue(line, 0);
         std::cout << "Off" << std::endl;
-        usleep(5000);
+        usleep(500000);
     }
 
     return 0;
