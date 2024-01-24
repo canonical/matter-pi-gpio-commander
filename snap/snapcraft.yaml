@@ -25,7 +25,6 @@ plugs:
   dev-gpiochip0:
     interface: system-files
     read:
-      - /dev/gpiochip0
       - /sys/devices/platform/soc/fe200000.gpio/gpiochip0/dev
     write: 
       - /dev/gpiochip0
@@ -47,7 +46,6 @@ parts:
       - g++
       - gcc
       - libgpiod-dev
-      - libgpiod2
   
   # connectedhomeip:
   #   plugin: nil
