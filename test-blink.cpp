@@ -63,7 +63,7 @@ int main(void)
     {
         setLineValue(line, 1);
         std::cout << "On" << std::endl;
-        usleep(500000);
+        usleep(5e5);
 
         setLineValue(line, 0);
         std::cout << "Off" << std::endl;
