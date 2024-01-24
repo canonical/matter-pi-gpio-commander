@@ -22,7 +22,7 @@ plugs:
     name: io.openthread.BorderRouter.wpan0
 
   # Uses system-files snap interface to access the gpiochip0
-  dev-gpiochip0:
+  gpiochip0:
     interface: system-files
     read:
       - /sys/devices/platform/soc/fe200000.gpio/gpiochip0/dev
@@ -176,4 +176,4 @@ apps:
       - bin/load-snap-options.sh
     command: bin/test-blink
     plugs:
-      - dev-gpiochip0
+      - gpiochip0

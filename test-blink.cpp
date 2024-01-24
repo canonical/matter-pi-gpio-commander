@@ -10,7 +10,7 @@
 #define GPIO "GPIO"
 #define CONSUMER "test-blink"
 
-void setLineValue(struct gpiod_line *line, int value);
+void setGpioLineValue(struct gpiod_line *line, int value);
 
 int main(void)
 {
@@ -61,19 +61,19 @@ int main(void)
 
     for (;;)
     {
-        setLineValue(line, 1);
+        setGpioLineValue(line, 1);
         std::cout << "On" << std::endl;
         usleep(5e5);
 
-        setLineValue(line, 0);
+        setGpioLineValue(line, 0);
         std::cout << "Off" << std::endl;
-        usleep(500000);
+        usleep(5e5);
     }
 
     return 0;
 }
 
-void setLineValue(struct gpiod_line *line, int value)
+void setGpioLineValue(struct gpiod_line *line, int value)
 {
    int ret = gpiod_line_set_value(line, value);
    if(ret < 0)
