@@ -78,6 +78,6 @@ void setGpioLineValue(struct gpiod_line *line, int value)
    int ret = gpiod_line_set_value(line, value);
    if(ret < 0)
    {
-        std::cerr << "Failed to set line to " << value << "! Output code: " << ret << std::endl;
+        std::cerr << "Failed to set gpio line to " << value << std::endl;
    }
 }
