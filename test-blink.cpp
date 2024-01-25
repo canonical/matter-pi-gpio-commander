@@ -55,7 +55,7 @@ int main(void)
     int ret = gpiod_line_request_output(line, CONSUMER, 0);
     if (ret < 0)
     {
-        std::cerr << "Request line as output failed! Output code: " << ret << std::endl;
+        std::cerr << "Failed to set gpio line as output." << std::endl;
         return 1;
     }
 
