@@ -41,7 +41,7 @@ int main(void)
     chip = gpiod_chip_open("/dev/gpiochip0");
     if (!chip)
     {
-        std::cerr << "Failed to open gpiochip: /dev/gpiochip0" << std::endl;
+        std::cerr << "Failed to open gpio chip: /dev/gpiochip0" << std::endl;
         return 1;
     }
 
