@@ -39,13 +39,15 @@ parts:
     plugin: nil
     source: .
     override-build: |
-      g++ -Wall test-blink.cpp -lgpiod -o test-blink -static
+      g++ -Wall test-blink.cpp -lgpiod -o test-blink
       mkdir -p $CRAFT_PART_INSTALL/bin
       cp test-blink $CRAFT_PART_INSTALL/bin/
     build-packages:
       - g++
       - gcc
       - libgpiod-dev
+    stage-packages:
+      - libgpiod2
   
   connectedhomeip:
     plugin: nil
@@ -143,6 +145,8 @@ parts:
       - libreadline-dev
       - generate-ninja
       - libgpiod-dev 
+    stage-packages:
+      - libgpiod2
 
   local-bin:
     plugin: nil
