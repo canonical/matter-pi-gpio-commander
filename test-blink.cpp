@@ -48,7 +48,7 @@ int main(void)
     line = gpiod_chip_get_line(chip, gpio);
     if (!line)
     {
-        std::cerr << "Failed to get line! Output code: " << envGPIO << std::endl;
+        std::cerr << "Failed to get gpio line! Output code: " << envGPIO << std::endl;
         return 1;
     }
 
