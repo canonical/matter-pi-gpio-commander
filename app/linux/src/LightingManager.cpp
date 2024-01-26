@@ -34,6 +34,7 @@
 LightingManager LightingManager::sLight;
 
 #define GPIO "GPIO"
+#define GPIO_CHIP "/dev/gpiochip0"
 #define CONSUMER "Lighting_Manager"
 
 static int gpio;
@@ -54,10 +55,10 @@ CHIP_ERROR LightingManager::Init()
     gpio = std::stoi(envGPIO);
 
     struct gpiod_chip *chip;
-    chip = gpiod_chip_open("/dev/gpiochip0");
+    chip = gpiod_chip_open(GPIO_CHIP);
     if (!chip)
     {
-        ChipLogError(AppServer, "Failed to open gpiochip: /dev/gpiochip0");
+        ChipLogError(AppServer, "Failed to open gpiochip: GPIO_CHIP");
         return CHIP_ERROR_INTERNAL;
     }
 

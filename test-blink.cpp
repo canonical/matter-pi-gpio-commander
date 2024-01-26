@@ -9,6 +9,7 @@
 
 #define GPIO "GPIO"
 #define CONSUMER "test-blink"
+#define GPIO_CHIP "/dev/gpiochip0"
 
 void setGpioLineValue(struct gpiod_line *line, int value);
 
@@ -38,10 +39,10 @@ int main(void)
     // Setup GPIO with libgpiod
     struct gpiod_chip *chip;
 
-    chip = gpiod_chip_open("/dev/gpiochip0");
+    chip = gpiod_chip_open(GPIO_CHIP);
     if (!chip)
     {
-        std::cerr << "Failed to open gpio chip: /dev/gpiochip0" << std::endl;
+        std::cerr << "Failed to open gpio chip: " << GPIO_CHIP << std::endl;
         return 1;
     }
 
