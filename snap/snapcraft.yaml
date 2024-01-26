@@ -3,8 +3,8 @@ version: "1.1.0"
 summary: Raspberry Pi GPIO as a Matter lighting app
 description: Refer to https://snapcraft.io/matter-pi-gpio-commander
 
-# Apart from WiringPi (LGPL-3.0-only), everything else has Apache-2.0 license
-license: Apache-2.0 AND LGPL-3.0-only
+# Apart from libgpiod (LGPL-2.1-or-later), everything else has Apache-2.0 license
+license: Apache-2.0 AND LGPL-2.1-or-later
 
 grade: stable
 confinement: strict
