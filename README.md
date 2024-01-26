@@ -105,10 +105,10 @@ sudo snap connect matter-pi-gpio-commander:avahi-control
 > ```
 
 #### GPIO
-The [`gpio-memory-control`](https://snapcraft.io/docs/gpio-memory-control-interface) grants access to all GPIO memory.
+The gpio access is granted using the [`custom-device`](https://snapcraft.io/docs/custom-device-interface), which declares a slot to expose the `/dev/gpiochip*` device and also a plug to self connect, see [this article](https://snapcraft.io/docs/interface-management) to understand more about plugs and slots.
 
 ```bash
-sudo snap connect matter-pi-gpio-commander:gpio-memory-control
+sudo snap connect matter-pi-gpio-commander:custom-gpio matter-pi-gpio-commander:custom-gpio-dev 
 ```
 
 #### BLE
