@@ -14,7 +14,7 @@ architectures:
   - build-on: arm64
 
 slots:
-  gpiochip-slot:
+  custom-gpio-dev:
     interface: custom-device
     custom-device: gpiochip
     devices:
@@ -31,7 +31,7 @@ plugs:
     bus: system
     name: io.openthread.BorderRouter.wpan0
 
-  gpiochip-plug:
+  custom-gpio:
     interface: custom-device
     custom-device: gpiochip
 
@@ -173,7 +173,7 @@ apps:
       - network-bind
       - bluez
       - avahi-control
-      - gpiochip-plug
+      - custom-gpio
       - otbr-dbus-wpan0
 
   help:
@@ -185,4 +185,4 @@ apps:
       - bin/load-snap-options.sh
     command: bin/test-blink
     plugs:
-      - gpiochip-plug
+      - custom-gpio
