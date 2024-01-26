@@ -13,6 +13,16 @@ base: core22
 architectures:
   - build-on: arm64
 
+slots:
+  gpiochip-slot:
+    interface: custom-device
+    custom-device: gpiochip
+    devices:
+      - /dev/gpiochip[0-4]
+    files:
+      read:
+        - /sys/devices/platform/soc/*.gpio/gpiochip[0-4]/dev
+
 plugs:
   # This is to communicate with the OpenThread Border Router snap (https://snapcraft.io/openthread-border-router)
   # when enabling Thread on this application.
@@ -21,23 +31,9 @@ plugs:
     bus: system
     name: io.openthread.BorderRouter.wpan0
 
-  # Uses system-files snap interface to access the gpiochip0
-  gpiochip0:
-    interface: system-files
-    read:
-      # RPi 4 Model B Rev 1.x
-      # RPi 400 Rev 1.x
-      # RPi CM4 Rev 1.x
-      - /sys/devices/platform/soc/fe200000.gpio/gpiochip0/dev
-      # RPi 3 Model B Rev 1.x
-      # RPi 3 Model B Plus Rev 1.x
-      # RPi 3 Model A Plus Rev 1.x
-      # RPi CM3 Rev 1.x
-      # RPi Zero 2W Rev 1.x
-      - /sys/devices/platform/soc/3f200000.gpio/gpiochip0/dev
-    write: 
-      - /dev/gpiochip0
-
+  gpiochip-plug:
+    interface: custom-device
+    custom-device: gpiochip
 
 layout:
   /mnt:
@@ -177,7 +173,7 @@ apps:
       - network-bind
       - bluez
       - avahi-control
-      - gpiochip0
+      - gpiochip-plug
       - otbr-dbus-wpan0
 
   help:
@@ -189,4 +185,4 @@ apps:
       - bin/load-snap-options.sh
     command: bin/test-blink
     plugs:
-      - gpiochip0
+      - gpiochip-plug
