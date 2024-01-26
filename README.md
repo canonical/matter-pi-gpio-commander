@@ -7,6 +7,22 @@ The application is based on [CHIP's Linux Lighting App](https://github.com/proje
 
 Usage instructions are available below and on the **[wiki](https://github.com/canonical/matter-pi-gpio-commander/wiki)**.
 
+## Hardware Compatibility
+
+Until now, this snap will work on the following hardware:
+
+- RPi 4 Model B Rev 1.x
+- RPi 400 Rev 1.x
+- RPi CM4 Rev 1.x
+- RPi 3 Model B Rev 1.x
+- RPi 3 Model B Plus Rev 1.x
+- RPi 3 Model A Plus Rev 1.x
+- RPi CM3 Rev 1.x
+- RPi Zero 2W Rev 1.x
+
+We are working on the support for the Raspberry Pi 5 and it will be available soon.
+**Note:** If you have one of the listed hardware, and this snap doesn't work on it, please [open an issue](https://github.com/canonical/matter-pi-gpio-commander/issues/new).
+
 ## Install
 
 ```bash
