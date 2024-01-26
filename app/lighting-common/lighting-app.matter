@@ -2796,7 +2796,4 @@ endpoint 1 {
     handle command MoveColorTemperature;
     handle command StepColorTemperature;
   }
-
 }
-
-
