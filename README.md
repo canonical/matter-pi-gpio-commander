@@ -9,7 +9,7 @@ Usage instructions are available below and on the **[wiki](https://github.com/ca
 
 ## Hardware Compatibility
 
-Until now, this snap will work on the following hardware:
+This snap is expected to work on the following hardware:
 
 - RPi 4 Model B Rev 1.x
 - RPi 400 Rev 1.x
