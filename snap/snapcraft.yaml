@@ -18,10 +18,14 @@ slots:
     interface: custom-device
     custom-device: gpiochip
     devices:
-      - /dev/gpiochip[0-4]
+      # Legacy Raspberry Pis
+      - /dev/gpiochip0
+      # Raspberry Pi 5
+      - /dev/gpiochip4
     files:
       read:
-        - /sys/devices/platform/soc/*.gpio/gpiochip[0-4]/dev
+        - /sys/devices/platform/soc/*.gpio/gpiochip0/dev
+        - /sys/devices/platform/axi/*.pcie/*.gpio/gpiochip4/dev
 
 plugs:
   # This is to communicate with the OpenThread Border Router snap (https://snapcraft.io/openthread-border-router)
