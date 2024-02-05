@@ -37,7 +37,7 @@ LightingManager LightingManager::sLight;
 #define GPIO "GPIO"
 #define GPIOCHIP "GPIOCHIP"
 
-#define GPIO_CONSUMER "Lighting_Manager"
+#define GPIO_CONSUMER "matter-commander"
 
 static int gpio;
 static struct gpiod_line *gpioLine;

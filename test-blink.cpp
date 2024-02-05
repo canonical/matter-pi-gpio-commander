@@ -11,7 +11,7 @@
 #define GPIO "GPIO"
 #define GPIOCHIP "GPIOCHIP"
 
-#define GPIO_CONSUMER "test-blink"
+#define GPIO_CONSUMER "matter-commander-test-blink"
 
 void setGpioLineValue(struct gpiod_line *line, int value);
 
