@@ -55,7 +55,7 @@ CHIP_ERROR LightingManager::Init()
     char *envGPIOCHIP = std::getenv(GPIOCHIP);
     if (envGPIOCHIP == NULL || strlen(envGPIOCHIP) == 0)
     {
-        ChipLogError(AppServer, "Unset or empty environment variable: %s", envGPIOCHIP);
+        ChipLogError(AppServer, "Unset or empty environment variable: %s", GPIOCHIP);
         return CHIP_ERROR_INVALID_ARGUMENT;
     }
     ChipLogProgress(AppServer, "Using GPIOCHIP %s", envGPIOCHIP);
