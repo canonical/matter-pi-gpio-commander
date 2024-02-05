@@ -23,7 +23,7 @@ jobs:
       - name: Setup Upterm session
         uses: lhotari/action-upterm@v1
         with:
-          wait-timeout-minutes: 2
+          # wait-timeout-minutes: 2
 
       - name: Download artifact
         uses: actions/download-artifact@v4
