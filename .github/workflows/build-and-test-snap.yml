@@ -36,3 +36,24 @@ jobs:
         with:
           name: matter-pi-gpio-commander_${{ github.run_number}}_${{ matrix.platform }}.snap
           path: ${{ steps.build.outputs.snap }}
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: 
+          - arm64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Upterm session
+        uses: lhotari/action-upterm@v1
+        # with:
+          # wait-timeout-minutes: 2
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: matter-pi-gpio-commander_${{ github.run_number}}_${{ matrix.platform }}.snap
+          path: .
