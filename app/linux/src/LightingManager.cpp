@@ -58,7 +58,7 @@ CHIP_ERROR LightingManager::Init()
     chip = gpiod_chip_open(GPIO_CHIP);
     if (!chip)
     {
-        ChipLogError(AppServer, "Failed to open gpiochip: GPIO_CHIP");
+        ChipLogError(AppServer, "Failed to open gpiochip: %s", GPIO_CHIP );
         return CHIP_ERROR_INTERNAL;
     }
 

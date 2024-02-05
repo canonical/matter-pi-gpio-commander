@@ -11,8 +11,7 @@
 #define GPIO "GPIO"
 #define GPIOCHIP "GPIOCHIP"
 
-#define CONSUMER "test-blink"
-// #define GPIO_CHIP "/dev/gpiochip4"
+#define GPIO_CONSUMER "test-blink"
 
 void setGpioLineValue(struct gpiod_line *line, int value);
 
@@ -64,11 +63,11 @@ int main(void)
     line = gpiod_chip_get_line(chip, gpio);
     if (!line)
     {
-        std::cerr << "Failed to get gpio line! Output code: " << envGPIO << std::endl;
+        std::cerr << "Failed to get gpio line: " << gpio << std::endl;
         return 1;
     }
 
-    int ret = gpiod_line_request_output(line, CONSUMER, 0);
+    int ret = gpiod_line_request_output(line, GPIO_CONSUMER, 0);
     if (ret < 0)
     {
         std::cerr << "Failed to set gpio line as output." << std::endl;
