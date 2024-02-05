@@ -1,0 +1,32 @@
+name: Snap Tester
+
+on:
+  workflow_run:
+    workflows: ["Snap Builder"]
+    branches: [main]
+    types: 
+      - completed
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: 
+          - arm64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Upterm session
+        uses: lhotari/action-upterm@v1
+        with:
+          wait-timeout-minutes: 2
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: matter-pi-gpio-commander_${{ github.event.workflow_run.run_number}}_${{ matrix.platform }}.snap
+          path: .
