@@ -38,6 +38,7 @@ jobs:
           path: ${{ steps.build.outputs.snap }}
 
   test:
+    needs: build
     runs-on: ubuntu-latest
     strategy:
       matrix:
