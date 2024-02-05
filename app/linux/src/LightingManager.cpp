@@ -33,9 +33,11 @@
 
 LightingManager LightingManager::sLight;
 
+// Environment variables
 #define GPIO "GPIO"
-#define GPIO_CHIP "/dev/gpiochip0"
-#define CONSUMER "Lighting_Manager"
+#define GPIOCHIP "GPIOCHIP"
+
+#define GPIO_CONSUMER "Lighting_Manager"
 
 static int gpio;
 static struct gpiod_line *gpioLine;
@@ -45,34 +47,41 @@ CHIP_ERROR LightingManager::Init()
     char *envGPIO = std::getenv(GPIO);
     if (envGPIO == NULL || strlen(envGPIO) == 0)
     {
-        ChipLogError(AppServer, "Environment variable not set or empty: %s", GPIO);
-
+        ChipLogError(AppServer, "Unset or empty environment variable: %s", GPIO);
         return CHIP_ERROR_INVALID_ARGUMENT;
     }
-
     ChipLogProgress(AppServer, "Using GPIO %s", envGPIO);
 
-    gpio = std::stoi(envGPIO);
+    char *envGPIOCHIP = std::getenv(GPIOCHIP);
+    if (envGPIOCHIP == NULL || strlen(envGPIOCHIP) == 0)
+    {
+        ChipLogError(AppServer, "Unset or empty environment variable: %s", envGPIOCHIP);
+        return CHIP_ERROR_INVALID_ARGUMENT;
+    }
+    ChipLogProgress(AppServer, "Using GPIOCHIP %s", envGPIOCHIP);
 
+    gpio = std::stoi(envGPIO);
+    std::string gpioDevice = (std::string)"/dev/gpiochip" + envGPIOCHIP;
+    
     struct gpiod_chip *chip;
-    chip = gpiod_chip_open(GPIO_CHIP);
+    chip = gpiod_chip_open(gpioDevice.c_str());
     if (!chip)
     {
-        ChipLogError(AppServer, "Failed to open gpiochip: %s", GPIO_CHIP );
+        ChipLogError(AppServer, "Failed to open gpiochip: %s", gpioDevice.c_str());
         return CHIP_ERROR_INTERNAL;
     }
 
     gpioLine = gpiod_chip_get_line(chip, gpio);
     if (!gpioLine)
     {
-        ChipLogError(AppServer, "Failed to get line: %s", envGPIO);
+        ChipLogError(AppServer, "Failed to get line: %d", gpio);
         return CHIP_ERROR_INTERNAL;
     }
 
-    int ret = gpiod_line_request_output(gpioLine, CONSUMER, 0);
+    int ret = gpiod_line_request_output(gpioLine, GPIO_CONSUMER, 0);
     if (ret < 0)
     {
-        ChipLogError(AppServer, "Request line as output failed! Ouput code: %d", ret);
+        ChipLogError(AppServer, "Request line as output failed! Output code: %d", ret);
         return CHIP_ERROR_INTERNAL;
     }
 
