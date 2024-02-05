@@ -7,9 +7,12 @@
 #include <cstring>
 #include <unistd.h>
 
+// Environment variables
 #define GPIO "GPIO"
+#define GPIOCHIP "GPIOCHIP"
+
 #define CONSUMER "test-blink"
-#define GPIO_CHIP "/dev/gpiochip0"
+// #define GPIO_CHIP "/dev/gpiochip4"
 
 void setGpioLineValue(struct gpiod_line *line, int value);
 
@@ -17,18 +20,28 @@ int main(void)
 {
     struct gpiod_line *line;
 
+    // Read environment variables
     char *envGPIO = std::getenv(GPIO);
     if (envGPIO == NULL || strlen(envGPIO) == 0)
     {
-        std::cout << "Environment variable not set or empty: " << GPIO << std::endl;
+        std::cout << "Unset or empty environment variable: " << GPIO << std::endl;
         return 1;
     }
+    std::cout << "GPIO: " << envGPIO << std::endl;
 
+    char *envGPIOCHIP = std::getenv(GPIOCHIP);
+    if (envGPIOCHIP == NULL || strlen(envGPIOCHIP) == 0)
+    {
+        std::cout << "Unset or empty environment variable: " << GPIOCHIP << std::endl;
+        return 1;
+    }
+    std::cout << "GPIOCHIP: " << envGPIOCHIP << std::endl;
+
+    // Convert
     int gpio;
     try
     {
         gpio = std::stoi(envGPIO);
-        std::cout << "GPIO: " << gpio << std::endl;
     }
     catch (std::exception &ex)
     {
@@ -36,13 +49,15 @@ int main(void)
         return 1;
     }
 
+    std::string gpioDevice = (std::string)"/dev/gpiochip" + envGPIOCHIP;
+    
     // Setup GPIO with libgpiod
     struct gpiod_chip *chip;
 
-    chip = gpiod_chip_open(GPIO_CHIP);
+    chip = gpiod_chip_open(gpioDevice.c_str());
     if (!chip)
     {
-        std::cerr << "Failed to open gpio chip: " << GPIO_CHIP << std::endl;
+        std::cerr << "Failed to open gpio chip: " << gpioDevice << std::endl;
         return 1;
     }
 
