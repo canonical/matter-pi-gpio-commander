@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Set defaults
+snapctl set gpiochip=0

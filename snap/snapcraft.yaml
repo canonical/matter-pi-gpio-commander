@@ -1,10 +1,10 @@
 name: matter-pi-gpio-commander
-version: "1.1.0"
+version: "2.0.0"
 summary: Raspberry Pi GPIO as a Matter lighting app
 description: Refer to https://snapcraft.io/matter-pi-gpio-commander
 
-# Apart from WiringPi (LGPL-3.0-only), everything else has Apache-2.0 license
-license: Apache-2.0 AND LGPL-3.0-only
+# Apart from libgpiod (LGPL-2.1-or-later), everything else has Apache-2.0 license
+license: Apache-2.0 AND LGPL-2.1-or-later
 
 grade: stable
 confinement: strict
@@ -12,6 +12,20 @@ confinement: strict
 base: core22
 architectures:
   - build-on: arm64
+
+slots:
+  custom-gpio-dev:
+    interface: custom-device
+    custom-device: gpiochip
+    devices:
+      # Legacy Raspberry Pis
+      - /dev/gpiochip0
+      # Raspberry Pi 5
+      - /dev/gpiochip4
+    files:
+      read:
+        - /sys/devices/platform/soc/*.gpio/gpiochip0/dev
+        - /sys/devices/platform/axi/*.pcie/*.gpio/gpiochip4/dev
 
 plugs:
   # This is to communicate with the OpenThread Border Router snap (https://snapcraft.io/openthread-border-router)
@@ -21,34 +35,28 @@ plugs:
     bus: system
     name: io.openthread.BorderRouter.wpan0
 
+  custom-gpio:
+    interface: custom-device
+    custom-device: gpiochip
+
 layout:
   /mnt:
     bind: $SNAP_COMMON/mnt
 
 parts:
-  wiring-pi:
-    plugin: nil
-    source: https://github.com/WiringPi/WiringPi.git
-    source-depth: 1
-    source-tag: 2.61-1
-    override-build: |
-      WIRINGPI_SUDO="" ./build
-
-      mkdir -p $CRAFT_PART_INSTALL/lib
-      cp -v /usr/local/lib/libwiringPi.so* $CRAFT_PART_INSTALL/lib/
-
-      mkdir -p $CRAFT_PART_INSTALL/usr/share/doc/libwiringPi
-      cp COPYING.LESSER $CRAFT_PART_INSTALL/usr/share/doc/libwiringPi/
-    build-packages: [git, gcc, g++]
-
   test-blink:
-    after: [wiring-pi]
     plugin: nil
     source: .
     override-build: |
-      g++ -Wall test-blink.cpp -lwiringPi -o test-blink
+      g++ -Wall test-blink.cpp -lgpiod -o test-blink
       mkdir -p $CRAFT_PART_INSTALL/bin
       cp test-blink $CRAFT_PART_INSTALL/bin/
+    build-packages:
+      - g++
+      - gcc
+      - libgpiod-dev
+    stage-packages:
+      - libgpiod2
   
   connectedhomeip:
     plugin: nil
@@ -65,7 +73,7 @@ parts:
   zap:
     plugin: nil
     build-environment:
-      - ZAP_VERSION: v2023.12.07
+      - ZAP_VERSION: v2024.01.20
     build-packages:
       - wget
       - unzip
@@ -80,7 +88,7 @@ parts:
       fi
 
   lighting:
-    after: [wiring-pi, connectedhomeip, zap]
+    after: [connectedhomeip, zap]
     plugin: nil
     source: app
     build-environment:
@@ -145,6 +153,9 @@ parts:
       - libcairo2-dev
       - libreadline-dev
       - generate-ninja
+      - libgpiod-dev 
+    stage-packages:
+      - libgpiod2
 
   local-bin:
     plugin: nil
@@ -166,7 +177,7 @@ apps:
       - network-bind
       - bluez
       - avahi-control
-      - gpio-memory-control
+      - custom-gpio
       - otbr-dbus-wpan0
 
   help:
@@ -178,4 +189,4 @@ apps:
       - bin/load-snap-options.sh
     command: bin/test-blink
     plugs:
-      - gpio-memory-control
+      - custom-gpio
