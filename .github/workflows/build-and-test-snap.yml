@@ -48,13 +48,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Upterm session
-        uses: lhotari/action-upterm@v1
-        # with:
-          # wait-timeout-minutes: 2
-
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: matter-pi-gpio-commander_${{ github.run_number}}_${{ matrix.platform }}.snap
           path: .
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: ${{ matrix.platform }}
+
+      - name: Make gpio-mock.sh executable
+        run: chmod +x tests/gpio-mock.sh
+
+      - name: Run gpio-mock.sh
+        run: tests/gpio-mock.sh
+
+      - name: Setup Upterm session
+        uses: lhotari/action-upterm@v1
+        with:
+          wait-timeout-minutes: 10
