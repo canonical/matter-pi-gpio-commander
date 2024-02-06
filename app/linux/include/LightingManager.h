@@ -55,6 +55,7 @@ public:
     void SetCallbacks(LightingCallback_fn aActionInitiated_CB, LightingCallback_fn aActionCompleted_CB);
 
 private:
+    void SetGpioLineValue(int value);
     friend LightingManager & LightingMgr(void);
     State_t mState;
 
