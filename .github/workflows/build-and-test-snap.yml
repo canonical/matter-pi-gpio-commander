@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-arm64:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -36,9 +36,28 @@ jobs:
         with:
           name: matter-pi-gpio-commander_${{ github.run_number}}_${{ matrix.platform }}.snap
           path: ${{ steps.build.outputs.snap }}
+  
+  build-amd64:
+    outputs:
+      snap: ${{ steps.snapcraft.outputs.snap }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  test:
-    needs: build
+      - name: Build Snap
+        uses: snapcore/action-build@v1
+        id: snapcraft
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: matter-pi-gpio-commander_${{ github.run_number}}_amd64.snap
+          path: ${{ steps.snapcraft.outputs.snap }}
+          if-no-files-found: error
+
+  test-amd64:
+    needs: build-amd64
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -54,16 +73,33 @@ jobs:
           name: matter-pi-gpio-commander_${{ github.run_number}}_${{ matrix.platform }}.snap
           path: .
 
-      - name: Setup QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: ${{ matrix.platform }}
-
       - name: Make gpio-mock.sh executable
         run: chmod +x tests/gpio-mock.sh
 
       - name: Run gpio-mock.sh
         run: tests/gpio-mock.sh
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.*'
+          cache: false
+
+      # - name: Run tests
+      #   shell: bash
+      #   working-directory: tests
+      #   env:
+      #     SKIP_TEARDOWN_REMOVAL: true
+      #     LOCAL_SERVICE_SNAP: ../${{ needs.build.outputs.snap }}
+      #   run: |
+      #     go test -failfast -p 1 -timeout 30m -v
+
+      # - name: Upload snap logs
+      #   if: always()
+      #   uses: actions:upload-artifact@v4
+      #   with:
+      #     name: snap-logs
+      #     path: tests/*.log
 
       - name: Setup Upterm session
         uses: lhotari/action-upterm@v1
