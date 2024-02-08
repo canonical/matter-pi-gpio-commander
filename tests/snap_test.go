@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -43,6 +44,36 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+const sedCommand = `sed -i 's|/sys/devices/platform/axi/\*.pcie/\*.gpio/gpiochip4/dev|/sys/devices/platform/axi/*.pcie/*.gpio/gpiochip4/dev\n      - /sys/devices/platform/gpio-mockup.*/gpiochip*/dev|' squashfs-root/meta/snap.yaml`
+
+func authorizeGpioMock(path string) (string, error) {
+	_, stderr, err := utils.Exec(nil, "unsquashfs "+path)
+	if err != nil || stderr != "" {
+		log.Printf("stderr: %s", stderr)
+		log.Printf("err: %s", err)
+		return "", err
+	}
+
+	_, stderr, err = utils.Exec(nil, sedCommand)
+	if err != nil || stderr != "" {
+		log.Printf("stderr: %s", stderr)
+		log.Printf("err: %s", err)
+		return "", err
+	}
+
+	directory := filepath.Dir(path)
+	newPath := directory + "/mod_matter-pi-gpio-commander.snap"
+	_, stderr, err = utils.Exec(nil, "mksquashfs squashfs-root "+newPath)
+	if err != nil || stderr != "" {
+		log.Printf("stderr: %s", stderr)
+		log.Printf("err: %s", err)
+		return "", err
+	}
+
+	utils.Exec(nil, "rm -rf squashfs-root")
+	return newPath, nil
+}
+
 func setup() (teardown func(), err error) {
 
 	log.Println("[CLEAN]")
@@ -60,8 +91,17 @@ func setup() (teardown func(), err error) {
 		}
 	}
 
+	var newPath string
 	if utils.LocalServiceSnap() {
-		err = utils.SnapInstallFromFile(nil, utils.LocalServiceSnapPath)
+		newPath, err = authorizeGpioMock(utils.LocalServiceSnapPath)
+	}
+	if err != nil {
+		teardown()
+		return
+	}
+
+	if utils.LocalServiceSnap() {
+		err = utils.SnapInstallFromFile(nil, newPath)
 	} else {
 		err = utils.SnapInstallFromStore(nil, snapName, utils.ServiceChannel)
 	}
