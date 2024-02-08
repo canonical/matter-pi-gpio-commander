@@ -77,9 +77,6 @@ jobs:
           name: matter-pi-gpio-commander_${{ github.run_number}}_${{ matrix.platform }}.snap
           path: .
 
-      - name: Make gpio-mock.sh executable
-        run: chmod +x tests/gpio-mock.sh
-
       - name: Run gpio-mock.sh
         run: tests/gpio-mock.sh
 
