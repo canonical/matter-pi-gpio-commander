@@ -31,6 +31,7 @@ func init() {
 var start = time.Now()
 
 const snapName = "matter-pi-gpio-commander"
+const chipToolSnap = "chip-tool"
 
 func TestMain(m *testing.M) {
 	teardown, err := setup() // THIS NEED TO receive "t" but this function doen't have access to it TODO: fix this latter
@@ -75,6 +76,7 @@ func authorizeGpioMock(path string) (string, error) {
 }
 
 func setup() (teardown func(), err error) {
+	var newPath string
 
 	log.Println("[CLEAN]")
 	utils.SnapRemove(nil, snapName)
@@ -85,13 +87,15 @@ func setup() (teardown func(), err error) {
 		log.Println("[TEARDOWN]")
 		utils.SnapDumpLogs(nil, start, snapName)
 
+		utils.Exec(nil, "rm "+newPath)
+
 		log.Println("Removing installed snap:", !utils.SkipTeardownRemoval)
 		if !utils.SkipTeardownRemoval {
 			utils.SnapRemove(nil, snapName)
 		}
 	}
 
-	var newPath string
+	// authorize gpio mock
 	if utils.LocalServiceSnap() {
 		newPath, err = authorizeGpioMock(utils.LocalServiceSnapPath)
 	}
@@ -100,6 +104,7 @@ func setup() (teardown func(), err error) {
 		return
 	}
 
+	// install matter-pi-gpio-commander
 	if utils.LocalServiceSnap() {
 		err = utils.SnapInstallFromFile(nil, newPath)
 	} else {
@@ -110,12 +115,23 @@ func setup() (teardown func(), err error) {
 		return
 	}
 
-	// connect interfaces
+	// install chip-tool
+	err = utils.SnapInstallFromStore(nil, chipToolSnap, utils.ServiceChannel)
+	if err != nil {
+		teardown()
+		return
+	}
+
+	// connect interfaces:
+
+	// matter-pi-gpio-commander interfaces
 	utils.SnapConnect(nil, snapName+":avahi-control", "")
 	utils.SnapConnect(nil, snapName+":bluez", "")
 	utils.SnapConnect(nil, snapName+":network", "")
 	utils.SnapConnect(nil, snapName+":network-bind", "")
 	utils.SnapConnect(nil, snapName+":custom-gpio", snapName+":custom-gpio-dev")
+	// chip-tool interfaces
+	utils.SnapConnect(nil, chipToolSnap+":avahi-observe", "")
 	return
 }
 
@@ -128,8 +144,8 @@ func getMockGPIO(t *testing.T) string {
 	return gpioChipNumber
 }
 
-func TestBlinkOperation(t *testing.T) {
-	log.Println("[TEST] Standard blink operation")
+func setupGpio(t *testing.T) {
+	t.Helper()
 
 	gpiochip := TestedGpioChip
 	if gpiochip == "" {
@@ -146,15 +162,42 @@ func TestBlinkOperation(t *testing.T) {
 	utils.SnapSet(t, snapName, "gpiochip", gpiochip)
 	utils.SnapSet(t, snapName, "gpio", gpioline)
 
-	// test blink operation
+}
 
+func TestBlinkOperation(t *testing.T) {
+	log.Println("[TEST] Standard blink operation")
+
+	setupGpio(t)
+
+	// test blink operation
 	t.Run("test-blink", func(t *testing.T) {
-		ctx, cancel := context.WithDeadline(context.Background(), <-time.After(10*time.Second))
+		ctx, cancel := context.WithDeadline(context.Background(), <-time.After(20*time.Second))
 		defer cancel()
 
-		_, _, err := utils.ExecContextVerbose(nil, ctx, snapName+".test-blink")
+		stdout, _, err := utils.ExecContextVerbose(nil, ctx, snapName+".test-blink")
 		t.Logf("err: %s", err)
+		t.Logf("stdout: %s", stdout)
 		assert.Error(t, err, "Expected an error")
 		assert.Equal(t, "context deadline exceeded", err.Error())
+	})
+}
+
+func TestWifiCommander(t *testing.T) {
+	log.Println("[TEST] Wifi commander")
+
+	setupGpio(t)
+
+	utils.SnapStart(t, snapName)
+
+	// comission chip-tool
+	t.Run("Commission", func(t *testing.T) {
+		utils.Exec(t, "sudo chip-tool pairing onnetwork 110 20202021")
+	})
+
+	t.Run("Control", func(t *testing.T) {
+		for i := 0; i < 10; i++ {
+			time.Sleep(1 * time.Second)
+			utils.Exec(t, "sudo chip-tool onoff toggle 110 1")
+		}
 	})
 }
