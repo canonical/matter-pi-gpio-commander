@@ -91,7 +91,7 @@ jobs:
         working-directory: tests
         env:
           SKIP_TEARDOWN_REMOVAL: true
-          LOCAL_SERVICE_SNAP: ../${{ needs.build.outputs.snap }}
+          LOCAL_SERVICE_SNAP: ../matter-pi-gpio-commander_${{ github.run_number}}_${{ matrix.platform }}.snap
         run: |
           go test -failfast -p 1 -timeout 30m -v
 
