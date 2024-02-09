@@ -11,8 +11,7 @@ confinement: strict
 
 base: core22
 architectures:
-  - build-on: [amd64]
-  - build-on: [arm64]
+  - build-on: arm64
 
 slots:
   custom-gpio-dev:
