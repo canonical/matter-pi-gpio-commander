@@ -14,19 +14,9 @@ import (
 
 const (
 	// enviroment variables
-	SpecificGpioChip = "GPIO_CHIP"
-	SpecifGpioLine   = "GPIO_LINE"
+	specificGpioChip = "GPIO_CHIP"
+	specifGpioLine   = "GPIO_LINE"
 )
-
-var (
-	TestedGpioChip = ""
-	TestedGpioLine = ""
-)
-
-func init() {
-	TestedGpioChip = os.Getenv(SpecificGpioChip)
-	TestedGpioLine = os.Getenv(SpecifGpioLine)
-}
 
 var start = time.Now()
 
@@ -115,41 +105,44 @@ func setup() (teardown func(), err error) {
 		return
 	}
 
-	// install chip-tool
-	err = utils.SnapInstallFromStore(nil, chipToolSnap, utils.ServiceChannel)
-	if err != nil {
+	if err = setupGPIO(); err != nil {
 		teardown()
 		return
 	}
 
 	// connect interfaces:
-
-	// matter-pi-gpio-commander interfaces
 	utils.SnapConnect(nil, snapName+":avahi-control", "")
 	utils.SnapConnect(nil, snapName+":bluez", "")
 	utils.SnapConnect(nil, snapName+":network", "")
 	utils.SnapConnect(nil, snapName+":network-bind", "")
 	utils.SnapConnect(nil, snapName+":custom-gpio", snapName+":custom-gpio-dev")
-	// chip-tool interfaces
-	utils.SnapConnect(nil, chipToolSnap+":avahi-observe", "")
+
 	return
 }
 
-func getMockGPIO(t *testing.T) string {
-	t.Helper()
-	gpioChipNumber, stderr, err := utils.Exec(t, "ls /dev/gpiochip* | sort -n | tail -n 1 | cut -d'p' -f3")
+func getMockGPIO() (string, error) {
+	gpioChipNumber, stderr, err := utils.Exec(nil, "ls /dev/gpiochip* | sort -n | tail -n 1 | cut -d'p' -f3")
 	if err != nil || stderr != "" {
-		t.Fatalf("Failed to get mock gpio chip number, Error %s: %s", stderr, err)
+		log.Printf("Failed to get mock gpio chip number, Error %s: %s", stderr, err)
+		return "", err
 	}
-	return gpioChipNumber
+	return gpioChipNumber, nil
 }
 
-func setupGpio(t *testing.T) {
-	t.Helper()
+func setupGPIO() error {
+
+	TestedGpioChip := os.Getenv(specificGpioChip)
+	TestedGpioLine := os.Getenv(specifGpioLine)
 
 	gpiochip := TestedGpioChip
+	var err error
 	if gpiochip == "" {
-		gpiochip = getMockGPIO(t)
+		gpiochip, err = getMockGPIO()
+		if err != nil {
+			log.Printf("Failed to get mock gpio chip number: %s", err)
+			return err
+		}
+
 		log.Printf("[TEST] No specific gpiochip defined, using mockup gpio: /dev/gpiochip%s", gpiochip)
 	}
 
@@ -159,15 +152,14 @@ func setupGpio(t *testing.T) {
 		log.Printf("[TEST] No specific gpio line defined, using default: %s", gpioline)
 	}
 
-	utils.SnapSet(t, snapName, "gpiochip", gpiochip)
-	utils.SnapSet(t, snapName, "gpio", gpioline)
+	utils.SnapSet(nil, snapName, "gpiochip", gpiochip)
+	utils.SnapSet(nil, snapName, "gpio", gpioline)
 
+	return nil
 }
 
 func TestBlinkOperation(t *testing.T) {
 	log.Println("[TEST] Standard blink operation")
-
-	setupGpio(t)
 
 	// test blink operation
 	t.Run("test-blink", func(t *testing.T) {
@@ -185,7 +177,13 @@ func TestBlinkOperation(t *testing.T) {
 func TestWifiCommander(t *testing.T) {
 	log.Println("[TEST] Wifi commander")
 
-	setupGpio(t)
+	// install chip-tool
+	err := utils.SnapInstallFromStore(t, chipToolSnap, utils.ServiceChannel)
+	if err != nil {
+		t.Fatalf("Failed to install chip-tool: %s", err)
+	}
+	// chip-tool interfaces
+	utils.SnapConnect(nil, chipToolSnap+":avahi-observe", "")
 
 	utils.SnapStart(t, snapName)
 
