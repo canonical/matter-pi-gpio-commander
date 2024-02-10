@@ -37,45 +37,19 @@ jobs:
           name: matter-pi-gpio-commander_${{ github.run_number}}_${{ matrix.platform }}.snap
           path: ${{ steps.build.outputs.snap }}
 
-  build-amd64:
-    outputs:
-      snap: ${{ steps.snapcraft.outputs.snap }}
+  build-and-test-amd64:
+    needs: build-amd64
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        platform:
-          - amd64
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Inject amd64 build
+        run: sed -i '/architectures:/a \ \ - build-on: amd64' snap/snapcraft.yaml
+   
       - name: Build Snap
         uses: snapcore/action-build@v1
         id: snapcraft
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: matter-pi-gpio-commander_${{ github.run_number}}_${{ matrix.platform }}.snap
-          path: ${{ steps.snapcraft.outputs.snap }}
-          if-no-files-found: error
-
-  test-amd64:
-    needs: build-amd64
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        platform:
-          - amd64
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: matter-pi-gpio-commander_${{ github.run_number}}_${{ matrix.platform }}.snap
-          path: .
 
       - name: Run gpio-mock.sh
         run: tests/gpio-mock.sh
@@ -91,18 +65,13 @@ jobs:
         working-directory: tests
         env:
           SKIP_TEARDOWN_REMOVAL: true
-          LOCAL_SERVICE_SNAP: ../matter-pi-gpio-commander_${{ github.run_number}}_${{ matrix.platform }}.snap
+          LOCAL_SERVICE_SNAP: ../${{ steps.snapcraft.outputs.snap }}
         run: |
           go test -failfast -p 1 -timeout 30m -v
 
-      # - name: Upload snap logs
-      #   if: always()
-      #   uses: actions:upload-artifact@v4
-      #   with:
-      #     name: snap-logs
-      #     path: tests/*.log
-
-      # - name: Setup Upterm session
-      #   uses: lhotari/action-upterm@v1
-      #   with:
-      #     wait-timeout-minutes: 10
+      - name: Upload snap logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snap-logs
+          path: tests/*.log
