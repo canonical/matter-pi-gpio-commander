@@ -38,14 +38,13 @@ jobs:
           path: ${{ steps.build.outputs.snap }}
 
   build-and-test-amd64:
-    needs: build-amd64
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Inject amd64 build
-        run: sed -i '/architectures:/a \ \ - build-on: amd64' snap/snapcraft.yaml
+        run: tests/inject-amd64-arch.sh
    
       - name: Build Snap
         uses: snapcore/action-build@v1
