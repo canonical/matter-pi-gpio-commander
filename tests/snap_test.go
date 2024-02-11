@@ -24,7 +24,7 @@ const snapName = "matter-pi-gpio-commander"
 const chipToolSnap = "chip-tool"
 
 func TestMain(m *testing.M) {
-	teardown, err := setup() // THIS NEED TO receive "t" but this function doen't have access to it TODO: fix this latter
+	teardown, err := setup()
 	if err != nil {
 		log.Fatalf("Failed to setup tests: %s", err)
 	}
