@@ -139,8 +139,7 @@ func setupGPIO() error {
 	if gpiochip == "" {
 		gpiochip, err = getMockGPIO()
 		if err != nil {
-			log.Printf("Failed to get mock gpio chip number: %s", err)
-			return err
+			return fmt.Errorf("failed to get mock gpio chip number: %s", err)
 		}
 
 		log.Printf("[TEST] No specific gpiochip defined, using mockup gpio: /dev/gpiochip%s", gpiochip)
