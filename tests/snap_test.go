@@ -186,7 +186,6 @@ func TestWifiCommander(t *testing.T) {
 
 	utils.SnapStart(t, snapName)
 
-	// comission chip-tool
 	t.Run("Commission", func(t *testing.T) {
 		utils.Exec(t, "sudo chip-tool pairing onnetwork 110 20202021")
 	})
