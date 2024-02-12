@@ -1,30 +1,46 @@
-// Dependency:
-// https://github.com/WiringPi/WiringPi
-//
 // Build:
-// g++ -Wall test-blink.cpp -lwiringPi -o test-blink
+// g++ -Wall test-blink.cpp -lgpiod -o test-blink
 
-#include <wiringPi.h>
+#include <gpiod.h>
 #include <cstdlib>
 #include <iostream>
 #include <cstring>
+#include <unistd.h>
 
+// Environment variables
 #define GPIO "GPIO"
+#define GPIOCHIP "GPIOCHIP"
+
+#define GPIO_CONSUMER "matter-commander-test-blink"
+
+void setGpioLineValue(struct gpiod_line *line, int value);
 
 int main(void)
 {
+    struct gpiod_line *line;
+
+    // Read environment variables
     char *envGPIO = std::getenv(GPIO);
     if (envGPIO == NULL || strlen(envGPIO) == 0)
     {
-        std::cout << "Environment variable not set or empty: " << GPIO << std::endl;
+        std::cout << "Unset or empty environment variable: " << GPIO << std::endl;
         return 1;
     }
+    std::cout << "GPIO: " << envGPIO << std::endl;
 
+    char *envGPIOCHIP = std::getenv(GPIOCHIP);
+    if (envGPIOCHIP == NULL || strlen(envGPIOCHIP) == 0)
+    {
+        std::cout << "Unset or empty environment variable: " << GPIOCHIP << std::endl;
+        return 1;
+    }
+    std::cout << "GPIOCHIP: " << envGPIOCHIP << std::endl;
+
+    // Convert
     int gpio;
     try
     {
         gpio = std::stoi(envGPIO);
-        std::cout << "GPIO: " << gpio << std::endl;
     }
     catch (std::exception &ex)
     {
@@ -32,19 +48,51 @@ int main(void)
         return 1;
     }
 
-    wiringPiSetupGpio();
-    pinMode(gpio, OUTPUT);
+    std::string gpioDevice = (std::string)"/dev/gpiochip" + envGPIOCHIP;
+    
+    // Setup GPIO with libgpiod
+    struct gpiod_chip *chip;
+
+    chip = gpiod_chip_open(gpioDevice.c_str());
+    if (!chip)
+    {
+        std::cerr << "Failed to open gpio chip: " << gpioDevice << std::endl;
+        return 1;
+    }
+
+    line = gpiod_chip_get_line(chip, gpio);
+    if (!line)
+    {
+        std::cerr << "Failed to get gpio line: " << gpio << std::endl;
+        return 1;
+    }
+
+    int ret = gpiod_line_request_output(line, GPIO_CONSUMER, 0);
+    if (ret < 0)
+    {
+        std::cerr << "Failed to set gpio line as output." << std::endl;
+        return 1;
+    }
 
     for (;;)
     {
-        digitalWrite(gpio, HIGH);
+        setGpioLineValue(line, 1);
         std::cout << "On" << std::endl;
-        delay(500);
+        usleep(5e5);
 
-        digitalWrite(gpio, LOW);
+        setGpioLineValue(line, 0);
         std::cout << "Off" << std::endl;
-        delay(500);
+        usleep(5e5);
     }
 
     return 0;
+}
+
+void setGpioLineValue(struct gpiod_line *line, int value)
+{
+   int ret = gpiod_line_set_value(line, value);
+   if(ret < 0)
+   {
+        std::cerr << "Failed to set gpio line to " << value << std::endl;
+   }
 }

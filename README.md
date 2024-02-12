@@ -7,6 +7,22 @@ The application is based on [CHIP's Linux Lighting App](https://github.com/proje
 
 Usage instructions are available below and on the **[wiki](https://github.com/canonical/matter-pi-gpio-commander/wiki)**.
 
+## Hardware Compatibility
+
+This snap is expected to work on the following Raspberry Pi hardware:
+
+- RPi 5 Model B Rev 1.x
+- RPi 4 Model B Rev 1.x
+- RPi 400 Rev 1.x
+- RPi CM4 Rev 1.x
+- RPi 3 Model B Rev 1.x
+- RPi 3 Model B Plus Rev 1.x
+- RPi 3 Model A Plus Rev 1.x
+- RPi CM3 Rev 1.x
+- RPi Zero 2W Rev 1.x
+
+**Note:** If you have one of the listed hardware, and this snap doesn't work on it, please [open an issue](https://github.com/canonical/matter-pi-gpio-commander/issues/new).
+
 ## Install
 
 ```bash
@@ -89,10 +105,12 @@ sudo snap connect matter-pi-gpio-commander:avahi-control
 > ```
 
 #### GPIO
-The [`gpio-memory-control`](https://snapcraft.io/docs/gpio-memory-control-interface) grants access to all GPIO memory.
+The gpio access is granted using the [`custom-device`](https://snapcraft.io/docs/custom-device-interface), which declares a slot to expose the `/dev/gpiochip*` device and also a plug to self connect.
+This interface is auto connected when installing the snap from the Snap Store.
 
+For manual connection:
 ```bash
-sudo snap connect matter-pi-gpio-commander:gpio-memory-control
+sudo snap connect matter-pi-gpio-commander:custom-gpio matter-pi-gpio-commander:custom-gpio-dev 
 ```
 
 #### BLE
