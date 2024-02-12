@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -20,7 +21,7 @@ const (
 
 var start = time.Now()
 
-const snapName = "matter-pi-gpio-commander"
+const snapMatterPiGPIO = "matter-pi-gpio-commander"
 const chipToolSnap = "chip-tool"
 
 func TestMain(m *testing.M) {
@@ -69,19 +70,21 @@ func setup() (teardown func(), err error) {
 	var newPath string
 
 	log.Println("[CLEAN]")
-	utils.SnapRemove(nil, snapName)
+	utils.SnapRemove(nil, snapMatterPiGPIO)
+	utils.SnapRemove(nil, chipToolSnap)
 
 	log.Println("[SETUP]")
 
 	teardown = func() {
 		log.Println("[TEARDOWN]")
-		utils.SnapDumpLogs(nil, start, snapName)
+		utils.SnapDumpLogs(nil, start, snapMatterPiGPIO)
 
 		utils.Exec(nil, "rm "+newPath)
 
 		log.Println("Removing installed snap:", !utils.SkipTeardownRemoval)
 		if !utils.SkipTeardownRemoval {
-			utils.SnapRemove(nil, snapName)
+			utils.SnapRemove(nil, snapMatterPiGPIO)
+			utils.SnapRemove(nil, chipToolSnap)
 		}
 	}
 
@@ -98,7 +101,7 @@ func setup() (teardown func(), err error) {
 	if utils.LocalServiceSnap() {
 		err = utils.SnapInstallFromFile(nil, newPath)
 	} else {
-		err = utils.SnapInstallFromStore(nil, snapName, utils.ServiceChannel)
+		err = utils.SnapInstallFromStore(nil, snapMatterPiGPIO, utils.ServiceChannel)
 	}
 	if err != nil {
 		teardown()
@@ -111,11 +114,11 @@ func setup() (teardown func(), err error) {
 	}
 
 	// connect interfaces:
-	utils.SnapConnect(nil, snapName+":avahi-control", "")
-	utils.SnapConnect(nil, snapName+":bluez", "")
-	utils.SnapConnect(nil, snapName+":network", "")
-	utils.SnapConnect(nil, snapName+":network-bind", "")
-	utils.SnapConnect(nil, snapName+":custom-gpio", snapName+":custom-gpio-dev")
+	utils.SnapConnect(nil, snapMatterPiGPIO+":avahi-control", "")
+	utils.SnapConnect(nil, snapMatterPiGPIO+":bluez", "")
+	utils.SnapConnect(nil, snapMatterPiGPIO+":network", "")
+	utils.SnapConnect(nil, snapMatterPiGPIO+":network-bind", "")
+	utils.SnapConnect(nil, snapMatterPiGPIO+":custom-gpio", snapMatterPiGPIO+":custom-gpio-dev")
 
 	return
 }
@@ -151,8 +154,8 @@ func setupGPIO() error {
 		log.Printf("[TEST] No specific gpio line defined, using default: %s", gpioline)
 	}
 
-	utils.SnapSet(nil, snapName, "gpiochip", gpiochip)
-	utils.SnapSet(nil, snapName, "gpio", gpioline)
+	utils.SnapSet(nil, snapMatterPiGPIO, "gpiochip", gpiochip)
+	utils.SnapSet(nil, snapMatterPiGPIO, "gpio", gpioline)
 
 	return nil
 }
@@ -165,7 +168,7 @@ func TestBlinkOperation(t *testing.T) {
 		ctx, cancel := context.WithDeadline(context.Background(), <-time.After(20*time.Second))
 		defer cancel()
 
-		stdout, _, err := utils.ExecContextVerbose(nil, ctx, snapName+".test-blink")
+		stdout, _, err := utils.ExecContextVerbose(nil, ctx, snapMatterPiGPIO+".test-blink")
 		t.Logf("err: %s", err)
 		t.Logf("stdout: %s", stdout)
 		assert.Error(t, err, "Expected an error")
@@ -184,7 +187,7 @@ func TestWifiCommander(t *testing.T) {
 	// chip-tool interfaces
 	utils.SnapConnect(nil, chipToolSnap+":avahi-observe", "")
 
-	utils.SnapStart(t, snapName)
+	utils.SnapStart(t, snapMatterPiGPIO)
 
 	t.Run("Commission", func(t *testing.T) {
 		utils.Exec(t, "sudo chip-tool pairing onnetwork 110 20202021")
