@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -36,7 +37,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-const sedCommand = `sed -i 's|/sys/devices/platform/axi/\*.pcie/\*.gpio/gpiochip4/dev|/sys/devices/platform/axi/*.pcie/*.gpio/gpiochip4/dev\n      - /sys/devices/platform/gpio-mockup.*/gpiochip*/dev|' squashfs-root/meta/snap.yaml`
+const sedMockGPIOAuthorization = `sed -i '/\/sys\/devices\/platform\/axi\/\*.pcie\/\*.gpio\/gpiochip4\/dev/a \      - /sys/devices/platform/gpio-mockup.*/gpiochip*/dev' squashfs-root/meta/snap.yaml`
 
 func authorizeGpioMock(path string) (string, error) {
 	_, stderr, err := utils.Exec(nil, "unsquashfs "+path)
@@ -46,7 +47,7 @@ func authorizeGpioMock(path string) (string, error) {
 		return "", err
 	}
 
-	_, stderr, err = utils.Exec(nil, sedCommand)
+	_, stderr, err = utils.Exec(nil, sedMockGPIOAuthorization)
 	if err != nil || stderr != "" {
 		log.Printf("stderr: %s", stderr)
 		log.Printf("err: %s", err)
@@ -134,50 +135,42 @@ func getMockGPIO() (string, error) {
 
 func setupGPIO() error {
 
-	TestedGpioChip := os.Getenv(specificGpioChip)
-	TestedGpioLine := os.Getenv(specifGpioLine)
-
-	gpiochip := TestedGpioChip
+	gpioChip := os.Getenv(specificGpioChip)
 	var err error
-	if gpiochip == "" {
-		gpiochip, err = getMockGPIO()
+	if gpioChip == "" {
+		gpioChip, err = getMockGPIO()
 		if err != nil {
 			return fmt.Errorf("failed to get mock gpio chip number: %s", err)
 		}
 
-		log.Printf("[TEST] No specific gpiochip defined, using mockup gpio: /dev/gpiochip%s", gpiochip)
+		log.Printf("[TEST] No specific gpiochip defined, using mockup gpio: /dev/gpiochip%s", gpioChip)
 	}
 
-	gpioline := TestedGpioLine
-	if gpioline == "" {
-		gpioline = "4"
-		log.Printf("[TEST] No specific gpio line defined, using default: %s", gpioline)
+	gpioLine := os.Getenv(specifGpioLine)
+	if gpioLine == "" {
+		gpioLine = "4"
+		log.Printf("[TEST] No specific gpio line defined, using default: %s", gpioLine)
 	}
 
-	utils.SnapSet(nil, snapMatterPiGPIO, "gpiochip", gpiochip)
-	utils.SnapSet(nil, snapMatterPiGPIO, "gpio", gpioline)
+	utils.SnapSet(nil, snapMatterPiGPIO, "gpiochip", gpioChip)
+	utils.SnapSet(nil, snapMatterPiGPIO, "gpio", gpioLine)
 
 	return nil
 }
 
 func TestBlinkOperation(t *testing.T) {
-	log.Println("[TEST] Standard blink operation")
-
 	// test blink operation
-	t.Run("test-blink", func(t *testing.T) {
-		ctx, cancel := context.WithDeadline(context.Background(), <-time.After(20*time.Second))
-		defer cancel()
+	ctx, cancel := context.WithDeadline(context.Background(), <-time.After(20*time.Second))
+	defer cancel()
 
-		stdout, _, err := utils.ExecContextVerbose(nil, ctx, snapMatterPiGPIO+".test-blink")
-		t.Logf("err: %s", err)
-		t.Logf("stdout: %s", stdout)
-		assert.Error(t, err, "Expected an error")
-		assert.Equal(t, "context deadline exceeded", err.Error())
-	})
+	stdout, _, err := utils.ExecContextVerbose(nil, ctx, snapMatterPiGPIO+".test-blink")
+	t.Logf("err: %s", err)
+	t.Logf("stdout: %s", stdout)
+	assert.Error(t, err)
+	assert.True(t, errors.Is(err, context.DeadlineExceeded))
 }
 
-func TestWifiCommander(t *testing.T) {
-	log.Println("[TEST] Wifi commander")
+func TestWifiMatterCommander(t *testing.T) {
 
 	// install chip-tool
 	err := utils.SnapInstallFromStore(t, chipToolSnap, utils.ServiceChannel)
