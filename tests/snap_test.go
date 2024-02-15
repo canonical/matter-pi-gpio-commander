@@ -201,10 +201,13 @@ func TestWifiMatterCommander(t *testing.T) {
 
 	utils.SnapStart(t, snapMatterPiGPIO)
 
+	time.Sleep(1 * time.Minute)
+
 	t.Run("Commission", func(t *testing.T) {
 		utils.Exec(t, "sudo chip-tool pairing onnetwork 110 20202021")
 	})
 
+	time.Sleep(1 * time.Minute)
 	t.Run("Control", func(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			time.Sleep(1 * time.Second)
