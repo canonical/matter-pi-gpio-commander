@@ -179,14 +179,13 @@ func setupGPIO() error {
 
 func TestBlinkOperation(t *testing.T) {
 	// test blink operation
-	ctx, cancel := context.WithDeadline(context.Background(), <-time.After(20*time.Second))
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(5*time.Second))
 	defer cancel()
 
 	stdout, _, err := utils.ExecContextVerbose(nil, ctx, snapMatterPiGPIO+".test-blink")
 	t.Logf("err: %s", err)
 	t.Logf("stdout: %s", stdout)
-	assert.Error(t, err)
-	assert.True(t, errors.Is(err, context.DeadlineExceeded))
+	assert.NoError(t, err)
 }
 
 func TestWifiMatterCommander(t *testing.T) {
