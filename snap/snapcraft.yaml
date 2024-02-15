@@ -27,7 +27,6 @@ slots:
         - /sys/devices/platform/soc/*.gpio/gpiochip0/dev
         - /sys/devices/platform/axi/*.pcie/*.gpio/gpiochip4/dev
 
-
 plugs:
   # This is to communicate with the OpenThread Border Router snap (https://snapcraft.io/openthread-border-router)
   # when enabling Thread on this application.

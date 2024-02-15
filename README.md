@@ -9,8 +9,9 @@ Usage instructions are available below and on the **[wiki](https://github.com/ca
 
 ## Hardware Compatibility
 
-This snap is expected to work on the following hardware:
+This snap is expected to work on the following Raspberry Pi hardware:
 
+- RPi 5 Model B Rev 1.x
 - RPi 4 Model B Rev 1.x
 - RPi 400 Rev 1.x
 - RPi CM4 Rev 1.x
@@ -20,7 +21,6 @@ This snap is expected to work on the following hardware:
 - RPi CM3 Rev 1.x
 - RPi Zero 2W Rev 1.x
 
-We are working on the support for the Raspberry Pi 5 and it will be available soon.
 **Note:** If you have one of the listed hardware, and this snap doesn't work on it, please [open an issue](https://github.com/canonical/matter-pi-gpio-commander/issues/new).
 
 ## Install
@@ -105,8 +105,11 @@ sudo snap connect matter-pi-gpio-commander:avahi-control
 > ```
 
 #### GPIO
-The gpio access is granted using the [`custom-device`](https://snapcraft.io/docs/custom-device-interface), which declares a slot to expose the `/dev/gpiochip*` device and also a plug to self connect, see [this article](https://snapcraft.io/docs/interface-management) to understand more about plugs and slots.
 
+The gpio access is granted using the [`custom-device`](https://snapcraft.io/docs/custom-device-interface), which declares a slot to expose the `/dev/gpiochip*` device and also a plug to self connect.
+This interface is auto connected when installing the snap from the Snap Store.
+
+For manual connection:
 ```bash
 sudo snap connect matter-pi-gpio-commander:custom-gpio matter-pi-gpio-commander:custom-gpio-dev 
 ```

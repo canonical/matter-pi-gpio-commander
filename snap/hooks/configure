@@ -10,5 +10,5 @@ fi
 
 GPIOCHIP=$(snapctl get gpiochip)
 if (( GPIOCHIP != 0 && GPIOCHIP != 4 )); then
-    logger -t $TAG --stderr "gpiochip: Unless that is being used for mocking, '$GPIOCHIP' is not supported; set to 0 or 4"
+    logger -t $TAG --stderr "WARNING! gpiochip: Unless that is being used for mocking, '$GPIOCHIP' is not supported; set to 0 or 4"
 fi
