@@ -63,7 +63,7 @@ func setup() (teardown func(), err error) {
 	}
 
 	// setup gpio mock
-	if newPath, err = setupGPIOMock(newPath); err != nil {
+	if newPath, err = setupGPIOMock(utils.LocalServiceSnapPath); err != nil {
 		teardown()
 		return
 	}
@@ -107,7 +107,7 @@ func setupGPIOMock(snapPath string) (string, error) {
 	}
 
 	// authorize gpio mock
-	newPath, err := authorizeGpioMock(utils.LocalServiceSnapPath)
+	newPath, err := authorizeGpioMock(snapPath)
 	if err != nil {
 		return snapPath, err
 	}
