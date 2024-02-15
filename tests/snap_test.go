@@ -17,13 +17,15 @@ import (
 const (
 	// enviroment variables
 	specificGpioChip = "GPIO_CHIP"
-	specifGpioLine   = "GPIO_LINE"
+	specificGpioLine = "GPIO_LINE"
+	gpioChipMock     = "USE_GPIO_MOCK"
 )
-
-var start = time.Now()
 
 const snapMatterPiGPIO = "matter-pi-gpio-commander"
 const chipToolSnap = "chip-tool"
+const sedMockGPIOAuthorization = `sed -i '/\/sys\/devices\/platform\/axi\/\*.pcie\/\*.gpio\/gpiochip4\/dev/a \      - /sys/devices/platform/gpio-mockup.*/gpiochip*/dev' squashfs-root/meta/snap.yaml`
+
+var start = time.Now()
 
 func TestMain(m *testing.M) {
 	teardown, err := setup()
@@ -35,36 +37,6 @@ func TestMain(m *testing.M) {
 	teardown()
 
 	os.Exit(code)
-}
-
-const sedMockGPIOAuthorization = `sed -i '/\/sys\/devices\/platform\/axi\/\*.pcie\/\*.gpio\/gpiochip4\/dev/a \      - /sys/devices/platform/gpio-mockup.*/gpiochip*/dev' squashfs-root/meta/snap.yaml`
-
-func authorizeGpioMock(path string) (string, error) {
-	_, stderr, err := utils.Exec(nil, "unsquashfs "+path)
-	if err != nil || stderr != "" {
-		log.Printf("stderr: %s", stderr)
-		log.Printf("err: %s", err)
-		return "", err
-	}
-
-	_, stderr, err = utils.Exec(nil, sedMockGPIOAuthorization)
-	if err != nil || stderr != "" {
-		log.Printf("stderr: %s", stderr)
-		log.Printf("err: %s", err)
-		return "", err
-	}
-
-	directory := filepath.Dir(path)
-	newPath := directory + "/mod_matter-pi-gpio-commander.snap"
-	_, stderr, err = utils.Exec(nil, "mksquashfs squashfs-root "+newPath)
-	if err != nil || stderr != "" {
-		log.Printf("stderr: %s", stderr)
-		log.Printf("err: %s", err)
-		return "", err
-	}
-
-	utils.Exec(nil, "rm -rf squashfs-root")
-	return newPath, nil
 }
 
 func setup() (teardown func(), err error) {
@@ -86,14 +58,12 @@ func setup() (teardown func(), err error) {
 		if !utils.SkipTeardownRemoval {
 			utils.SnapRemove(nil, snapMatterPiGPIO)
 			utils.SnapRemove(nil, chipToolSnap)
+			utils.Exec(nil, "./gpio-mock.sh teardown")
 		}
 	}
 
-	// authorize gpio mock
-	if utils.LocalServiceSnap() {
-		newPath, err = authorizeGpioMock(utils.LocalServiceSnapPath)
-	}
-	if err != nil {
+	// setup gpio mock
+	if newPath, err = setupGPIOMock(newPath); err != nil {
 		teardown()
 		return
 	}
@@ -124,32 +94,81 @@ func setup() (teardown func(), err error) {
 	return
 }
 
+func setupGPIOMock(snapPath string) (string, error) {
+	if !useGPIOMock() || !utils.LocalServiceSnap() {
+		return snapPath, nil
+	}
+
+	// check if gpio mock is enabled AND the service is running locally
+	// Run gpio mockup script
+	_, stderr, err := utils.Exec(nil, "./gpio-mock.sh")
+	if err != nil {
+		return snapPath, fmt.Errorf("Failed to run gpio mockup script %s: %s", stderr, err)
+	}
+
+	// authorize gpio mock
+	newPath, err := authorizeGpioMock(utils.LocalServiceSnapPath)
+	if err != nil {
+		return snapPath, err
+	}
+
+	return newPath, nil
+}
+
+func useGPIOMock() bool {
+	return os.Getenv(gpioChipMock) == "true"
+}
+
 func getMockGPIO() (string, error) {
 	gpioChipNumber, stderr, err := utils.Exec(nil, "ls /dev/gpiochip* | sort -n | tail -n 1 | cut -d'p' -f3")
 	if err != nil || stderr != "" {
-		log.Printf("Failed to get mock gpio chip number, Error %s: %s", stderr, err)
-		return "", err
+		return "", fmt.Errorf("failed to get mock gpio chip number, Error %s: %s", stderr, err)
 	}
 	return gpioChipNumber, nil
 }
 
-func setupGPIO() error {
+func authorizeGpioMock(path string) (string, error) {
+	_, stderr, err := utils.Exec(nil, "unsquashfs "+path)
+	if err != nil || stderr != "" {
+		log.Printf("stderr: %s", stderr)
+		log.Printf("err: %s", err)
+		return "", err
+	}
 
+	_, stderr, err = utils.Exec(nil, sedMockGPIOAuthorization)
+	if err != nil || stderr != "" {
+		log.Printf("stderr: %s", stderr)
+		log.Printf("err: %s", err)
+		return "", err
+	}
+
+	directory := filepath.Dir(path)
+	newPath := directory + "/mod_matter-pi-gpio-commander.snap"
+	_, stderr, err = utils.Exec(nil, "mksquashfs squashfs-root "+newPath)
+	if err != nil || stderr != "" {
+		log.Printf("stderr: %s", stderr)
+		log.Printf("err: %s", err)
+		return "", err
+	}
+
+	utils.Exec(nil, "rm -rf squashfs-root")
+	return newPath, nil
+}
+
+func setupGPIO() error {
+	gpioLine := os.Getenv(specificGpioLine)
 	gpioChip := os.Getenv(specificGpioChip)
-	var err error
-	if gpioChip == "" {
-		gpioChip, err = getMockGPIO()
+
+	// The GPIO_MOCKUP takes precedence over the specific GPIO_CHIP and GPIO_LINE
+	if useGPIOMock() && utils.LocalServiceSnap() {
+		gpioChip, err := getMockGPIO()
 		if err != nil {
 			return fmt.Errorf("failed to get mock gpio chip number: %s", err)
 		}
-
-		log.Printf("[TEST] No specific gpiochip defined, using mockup gpio: /dev/gpiochip%s", gpioChip)
-	}
-
-	gpioLine := os.Getenv(specifGpioLine)
-	if gpioLine == "" {
 		gpioLine = "4"
-		log.Printf("[TEST] No specific gpio line defined, using default: %s", gpioLine)
+
+		log.Printf("[TEST] Using mockup gpio: /dev/gpiochip%s", gpioChip)
+		log.Printf("[TEST] Using default gpio-mock line: %s", gpioLine)
 	}
 
 	utils.SnapSet(nil, snapMatterPiGPIO, "gpiochip", gpioChip)

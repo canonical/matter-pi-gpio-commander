@@ -50,9 +50,6 @@ jobs:
         uses: snapcore/action-build@v1
         id: snapcraft
 
-      - name: Run gpio-mock.sh
-        run: tests/gpio-mock.sh
-
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
@@ -63,6 +60,7 @@ jobs:
         shell: bash
         working-directory: tests
         env:
+          USE_GPIO_MOCK: true
           SKIP_TEARDOWN_REMOVAL: true
           LOCAL_SERVICE_SNAP: ../${{ steps.snapcraft.outputs.snap }}
         run: |
