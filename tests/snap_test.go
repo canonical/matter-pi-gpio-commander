@@ -182,10 +182,18 @@ func TestBlinkOperation(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(5*time.Second))
 	defer cancel()
 
-	stdout, _, err := utils.ExecContextVerbose(nil, ctx, snapMatterPiGPIO+".test-blink")
-	t.Logf("err: %s", err)
-	t.Logf("stdout: %s", stdout)
+	stdout, _, err := utils.ExecContext(nil, ctx, snapMatterPiGPIO+".test-blink")
 	assert.NoError(t, err)
+
+	// Assert GPIO value
+	assert.Contains(t, stdout, fmt.Sprintf("GPIO: %s", gpioLine))
+
+	// Assert GPIOCHIP value
+	assert.Contains(t, stdout, fmt.Sprintf("GPIOCHIP: %s", gpioChip))
+
+	// Assert log messages
+	assert.Contains(t, stdout, "On")
+	assert.Contains(t, stdout, "Off")
 }
 
 func TestWifiMatterCommander(t *testing.T) {
