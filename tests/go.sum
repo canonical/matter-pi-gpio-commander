@@ -1,5 +1,5 @@
-github.com/canonical/matter-snap-testing v1.0.0-beta.0.20240208185636-2f282dddac85 h1:n5gJ0e16fw+RvqNEo2YwxDsEQMpLgH7MShCjF/AcCqI=
-github.com/canonical/matter-snap-testing v1.0.0-beta.0.20240208185636-2f282dddac85/go.mod h1:800wP9+ux8DW9Xr9QvlIdxFHlu85mqlhvlA2JO20aeQ=
+github.com/canonical/matter-snap-testing v1.0.0-beta.1 h1:obxh5jYRWgCw6QNax4+aY571h+q/zcPZBOP64gwd56E=
+github.com/canonical/matter-snap-testing v1.0.0-beta.1/go.mod h1:800wP9+ux8DW9Xr9QvlIdxFHlu85mqlhvlA2JO20aeQ=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
