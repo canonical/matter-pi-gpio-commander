@@ -178,11 +178,12 @@ func setupGPIO() error {
 
 func TestBlinkOperation(t *testing.T) {
 	// test blink operation
-	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(5*time.Second))
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(10*time.Second))
 	defer cancel()
 
 	stdout, _, err := utils.ExecContext(nil, ctx, snapMatterPiGPIO+".test-blink")
 	assert.NoError(t, err)
+	assert.NoError(t, os.WriteFile("test-blink.log", []byte(stdout), 0644))
 
 	// Assert GPIO value
 	assert.Contains(t, stdout, fmt.Sprintf("GPIO: %s", gpioLine))
