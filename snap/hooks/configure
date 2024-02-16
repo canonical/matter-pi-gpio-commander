@@ -10,7 +10,7 @@ fi
 
 GPIOCHIP=$(snapctl get gpiochip)
 VALIDATION=$(snapctl get gpiochip-validation)
-if (( VALIDATION == "true" && GPIOCHIP != 0 && GPIOCHIP != 4 )); then
+if [[ "$VALIDATION" == "true" ]] && (( GPIOCHIP != 0 && GPIOCHIP != 4 )); then
     logger -t $TAG --stderr "gpiochip: '$GPIOCHIP' is not supported; set to 0 or 4"
     exit 1
 fi
