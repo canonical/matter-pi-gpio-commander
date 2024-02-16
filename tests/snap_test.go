@@ -17,7 +17,7 @@ const (
 	// enviroment variables
 	specificGpioChip = "GPIO_CHIP"
 	specificGpioLine = "GPIO_LINE"
-	gpioChipMock     = "USE_GPIO_MOCK"
+	gpioChipMock     = "MOCK_GPIO"
 )
 
 const snapMatterPiGPIO = "matter-pi-gpio-commander"
