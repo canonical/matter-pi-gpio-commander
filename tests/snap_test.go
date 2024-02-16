@@ -26,6 +26,8 @@ const chipToolSnap = "chip-tool"
 const sedMockGPIOAuthorization = `sed -i '/\/sys\/devices\/platform\/axi\/\*.pcie\/\*.gpio\/gpiochip4\/dev/a \      - /sys/devices/platform/gpio-mockup.*/gpiochip*/dev' squashfs-root/meta/snap.yaml`
 
 var start = time.Now()
+var gpioChip = os.Getenv(specificGpioChip)
+var gpioLine = os.Getenv(specificGpioLine)
 
 func TestMain(m *testing.M) {
 	teardown, err := setup()
@@ -156,8 +158,6 @@ func authorizeGpioMock(path string) (string, error) {
 }
 
 func setupGPIO() error {
-	gpioLine := os.Getenv(specificGpioLine)
-	gpioChip := os.Getenv(specificGpioChip)
 
 	// The GPIO_MOCKUP takes precedence over the specific GPIO_CHIP and GPIO_LINE
 	if useGPIOMock() && utils.LocalServiceSnap() {
