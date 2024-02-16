@@ -2,7 +2,6 @@ package tests
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -158,10 +157,10 @@ func authorizeGpioMock(path string) (string, error) {
 }
 
 func setupGPIO() error {
-
+	var err error
 	// The GPIO_MOCKUP takes precedence over the specific GPIO_CHIP and GPIO_LINE
 	if useGPIOMock() && utils.LocalServiceSnap() {
-		gpioChip, err := getMockGPIO()
+		gpioChip, err = getMockGPIO()
 		if err != nil {
 			return fmt.Errorf("failed to get mock gpio chip number: %s", err)
 		}
@@ -197,6 +196,16 @@ func TestBlinkOperation(t *testing.T) {
 }
 
 func TestWifiMatterCommander(t *testing.T) {
+	// lineNum, err := strconv.Atoi(gpioLine)
+	// if err != nil {
+	// 	t.Fatalf("Failed to convert gpioChip to int: %s", err)
+	// }
+
+	// l, err := gpiod.RequestLine("gpiochip"+gpioChip, lineNum, gpiod.AsOutput(0))
+	// if err != nil {
+	// 	t.Fatalf("Failed to request line: %s", err)
+	// }
+	// defer l.Close()
 
 	// install chip-tool
 	err := utils.SnapInstallFromStore(t, chipToolSnap, utils.ServiceChannel)
@@ -215,10 +224,19 @@ func TestWifiMatterCommander(t *testing.T) {
 	})
 
 	time.Sleep(1 * time.Minute)
+
+	expectedValue := 0 // Initial line value
 	t.Run("Control", func(t *testing.T) {
 		for i := 0; i < 10; i++ {
-			time.Sleep(1 * time.Second)
+			expectedValue ^= 1
 			utils.Exec(t, "sudo chip-tool onoff toggle 110 1")
+			// time.Sleep(1 * time.Second)
+			// value, err := l.Value()
+			// if err != nil {
+			// 	t.Fatalf("Failed to get line value: %s", err)
+			// }
+
+			// assert.Equal(t, expectedValue, value)
 		}
 	})
 }
