@@ -160,6 +160,8 @@ func setupGPIO() error {
 	var err error
 	// The GPIO_MOCKUP takes precedence over the specific GPIO_CHIP and GPIO_LINE
 	if useGPIOMock() && utils.LocalServiceSnap() {
+		utils.SnapSet(nil, snapMatterPiGPIO, "gpiochip-validation", "false")
+
 		gpioChip, err = getMockGPIO()
 		if err != nil {
 			return fmt.Errorf("failed to get mock gpio chip number: %s", err)
@@ -168,8 +170,6 @@ func setupGPIO() error {
 
 		log.Printf("[TEST] Using mockup gpio: /dev/gpiochip%s", gpioChip)
 		log.Printf("[TEST] Using default gpio-mock line: %s", gpioLine)
-
-		utils.SnapSet(nil, snapMatterPiGPIO, "gpiochip-validation", "false")
 	}
 
 	utils.SnapSet(nil, snapMatterPiGPIO, "gpiochip", gpioChip)
