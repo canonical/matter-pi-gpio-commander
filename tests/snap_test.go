@@ -129,6 +129,8 @@ func getMockGPIO() (string, error) {
 }
 
 func authorizeGpioMock(path string) (string, error) {
+	utils.Exec(nil, "rm -rf squashfs-root")
+
 	_, stderr, err := utils.Exec(nil, "unsquashfs "+path)
 	if err != nil || stderr != "" {
 		log.Printf("stderr: %s", stderr)
@@ -181,9 +183,9 @@ func setupGPIO() error {
 func TestBlinkOperation(t *testing.T) {
 	// test blink operation
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(10*time.Second))
-	defer cancel()
+	t.Cleanup(cancel)
 
-	utils.ExecContext(t, ctx, snapMatterPiGPIO+".test-blink")
+	stdout, _, _ := utils.ExecContextVerbose(t, ctx, snapMatterPiGPIO+".test-blink 2>&1")
 
 	// Assert GPIO value
 	assert.Contains(t, stdout, fmt.Sprintf("GPIO: %s", gpioLine))
