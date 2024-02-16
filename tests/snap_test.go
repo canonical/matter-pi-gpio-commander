@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,7 +23,9 @@ const (
 
 const snapMatterPiGPIO = "matter-pi-gpio-commander"
 const chipToolSnap = "chip-tool"
-const sedMockGPIOAuthorization = `sed -i '/\/sys\/devices\/platform\/axi\/\*.pcie\/\*.gpio\/gpiochip4\/dev/a \      - /sys/devices/platform/gpio-mockup.*/gpiochip*/dev' squashfs-root/meta/snap.yaml`
+
+const sedAuthorizeMockRead = `sed -i '/\/sys\/devices\/platform\/axi\/\*.pcie\/\*.gpio\/gpiochip4\/dev/a \      - /sys/devices/platform/gpio-mockup.*/gpiochip*/dev' squashfs-root/meta/snap.yaml`
+const sedAuthorizeMockGPIOsChips = `sed -i '/^\(\s*-\s*\/dev\/gpiochip\).*$/d' squashfs-root/meta/snap.yaml`
 
 var start = time.Now()
 var gpioChip = os.Getenv(specificGpioChip)
@@ -125,11 +128,13 @@ func getMockGPIO() (string, error) {
 	if err != nil || stderr != "" {
 		return "", fmt.Errorf("failed to get mock gpio chip number, Error %s: %s", stderr, err)
 	}
+	gpioChipNumber = strings.TrimSpace(gpioChipNumber)
+	gpioChipNumber = strings.Trim(gpioChipNumber, "\n")
 	return gpioChipNumber, nil
 }
 
 func authorizeGpioMock(path string) (string, error) {
-	utils.Exec(nil, "rm -rf squashfs-root")
+	// utils.Exec(nil, "rm -rf squashfs-root")
 
 	_, stderr, err := utils.Exec(nil, "unsquashfs "+path)
 	if err != nil || stderr != "" {
@@ -138,7 +143,14 @@ func authorizeGpioMock(path string) (string, error) {
 		return "", err
 	}
 
-	_, stderr, err = utils.Exec(nil, sedMockGPIOAuthorization)
+	_, stderr, err = utils.Exec(nil, sedAuthorizeMockRead)
+	if err != nil || stderr != "" {
+		log.Printf("stderr: %s", stderr)
+		log.Printf("err: %s", err)
+		return "", err
+	}
+
+	_, stderr, err = utils.Exec(nil, sedAuthorizeMockGPIOsChips)
 	if err != nil || stderr != "" {
 		log.Printf("stderr: %s", stderr)
 		log.Printf("err: %s", err)
@@ -154,7 +166,7 @@ func authorizeGpioMock(path string) (string, error) {
 		return "", err
 	}
 
-	utils.Exec(nil, "rm -rf squashfs-root")
+	// utils.Exec(nil, "rm -rf squashfs-root")
 	return newPath, nil
 }
 
@@ -183,9 +195,8 @@ func setupGPIO() error {
 func TestBlinkOperation(t *testing.T) {
 	// test blink operation
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(10*time.Second))
-	t.Cleanup(cancel)
 
-	stdout, _, _ := utils.ExecContextVerbose(t, ctx, snapMatterPiGPIO+".test-blink 2>&1")
+	stdout, _, _ := utils.ExecContextVerbose(t, ctx, snapMatterPiGPIO+".test-blink")
 
 	// Assert GPIO value
 	assert.Contains(t, stdout, fmt.Sprintf("GPIO: %s", gpioLine))
@@ -196,6 +207,8 @@ func TestBlinkOperation(t *testing.T) {
 	// Assert log messages
 	assert.Contains(t, stdout, "On")
 	assert.Contains(t, stdout, "Off")
+
+	t.Cleanup(cancel)
 }
 
 func TestWifiMatterCommander(t *testing.T) {
