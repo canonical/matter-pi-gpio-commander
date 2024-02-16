@@ -168,6 +168,8 @@ func setupGPIO() error {
 
 		log.Printf("[TEST] Using mockup gpio: /dev/gpiochip%s", gpioChip)
 		log.Printf("[TEST] Using default gpio-mock line: %s", gpioLine)
+
+		utils.SnapSet(nil, snapMatterPiGPIO, "gpiochip-validation", "false")
 	}
 
 	utils.SnapSet(nil, snapMatterPiGPIO, "gpiochip", gpioChip)

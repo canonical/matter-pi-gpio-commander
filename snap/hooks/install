@@ -2,3 +2,4 @@
 
 # Set defaults
 snapctl set gpiochip=0
+snapctl set gpiochip-validation=true
