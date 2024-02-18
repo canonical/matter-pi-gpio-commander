@@ -25,7 +25,7 @@ const snapMatterPiGPIO = "matter-pi-gpio-commander"
 const chipToolSnap = "chip-tool"
 
 const sedAuthorizeMockRead = `sed -i '/\/sys\/devices\/platform\/axi\/\*.pcie\/\*.gpio\/gpiochip4\/dev/a \      - /sys/devices/platform/gpio-mockup.*/gpiochip*/dev' squashfs-root/meta/snap.yaml`
-const sedAuthorizeMockGPIOsChips = `sed -i '/^\(\s*-\s*\/dev\/gpiochip\).*$/d' squashfs-root/meta/snap.yaml`
+const sedAuthorizeMockGPIOsChips = `sed -i 's/gpiochip[0,4]/gpiochip\*/' squashfs-root/meta/snap.yaml `
 
 var start = time.Now()
 var gpioChip = os.Getenv(specificGpioChip)
@@ -134,7 +134,7 @@ func getMockGPIO() (string, error) {
 }
 
 func authorizeGpioMock(path string) (string, error) {
-	// utils.Exec(nil, "rm -rf squashfs-root")
+	utils.Exec(nil, "rm -rf squashfs-root")
 
 	_, stderr, err := utils.Exec(nil, "unsquashfs "+path)
 	if err != nil || stderr != "" {
@@ -166,7 +166,7 @@ func authorizeGpioMock(path string) (string, error) {
 		return "", err
 	}
 
-	// utils.Exec(nil, "rm -rf squashfs-root")
+	utils.Exec(nil, "rm -rf squashfs-root")
 	return newPath, nil
 }
 
