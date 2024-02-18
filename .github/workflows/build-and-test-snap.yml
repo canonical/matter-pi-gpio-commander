@@ -56,10 +56,10 @@ jobs:
           go-version: '1.*'
           cache: false
 
-      - name: Setup upterm session
-        uses: lhotari/action-upterm@v1
-        with:
-          wait-timeout-minutes: 4
+      # - name: Setup upterm session
+      #   uses: lhotari/action-upterm@v1
+      #   with:
+      #     wait-timeout-minutes: 4
 
       - name: Run tests
         shell: bash
