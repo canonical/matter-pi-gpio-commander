@@ -59,7 +59,7 @@ jobs:
       - name: Setup upterm session
         uses: lhotari/action-upterm@v1
         with:
-          wait-timeout-minutes: 10
+          wait-timeout-minutes: 4
 
       - name: Run tests
         shell: bash
@@ -69,7 +69,7 @@ jobs:
           SKIP_TEARDOWN_REMOVAL: true
           LOCAL_SERVICE_SNAP: ../${{ steps.snapcraft.outputs.snap }}
         run: |
-          go test -failfast -p 1 -timeout 30m -v
+          go test -failfast -p 1 -timeout 10m -v
 
       - name: Upload snap logs
         if: always()
