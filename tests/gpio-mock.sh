@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [ "$1" = "teardown" ]; then
-	sudo modprobe -r gpio_mockup
+	sudo rmmod gpio_mockup
 	rm -rf gpio-mockup
 	exit 0
 fi
