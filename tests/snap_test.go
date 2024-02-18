@@ -196,7 +196,7 @@ func TestBlinkOperation(t *testing.T) {
 	// test blink operation
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(10*time.Second))
 
-	stdout, _, _ := utils.ExecContextVerbose(t, ctx, snapMatterPiGPIO+".test-blink")
+	stdout, _, _ := utils.ExecContextVerbose(t, ctx, "sudo "+snapMatterPiGPIO+".test-blink")
 
 	// Assert GPIO value
 	assert.Contains(t, stdout, fmt.Sprintf("GPIO: %s", gpioLine))
