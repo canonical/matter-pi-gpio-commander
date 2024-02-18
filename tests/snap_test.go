@@ -194,7 +194,7 @@ func setupGPIO() error {
 
 func TestBlinkOperation(t *testing.T) {
 	// test blink operation
-	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(10*time.Second))
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 
 	stdout, _, _ := utils.ExecContextVerbose(t, ctx, "sudo "+snapMatterPiGPIO+".test-blink")
 
