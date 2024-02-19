@@ -194,11 +194,15 @@ func setupGPIO() error {
 
 func TestBlinkOperation(t *testing.T) {
 	// test blink operation
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
+	// Kill the process after 15 seconds
+	// This is necessary because somehow when running on the GH workflow,
+	// the process does not stop with the cancel context and the test hangs
+	// indefinitely until the timeout is reached. This is a workaround to avoid that.
 	go func() {
-		time.Sleep(15 * time.Second)
-		utils.Exec(t, `sudo pkill -f "/snap/matter-pi-gpio-commander/x1/bin/test-blink"`)
+		time.Sleep(10 * time.Second)
+		utils.Exec(t, `sudo pkill -f "/snap/matter-pi-gpio-commander/x*/bin/test-blink"`)
 	}()
 
 	stdout, _, _ := utils.ExecContextVerbose(t, ctx, "sudo "+snapMatterPiGPIO+".test-blink")
