@@ -3,13 +3,11 @@ package tests
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"testing"
 	"time"
 
@@ -209,6 +207,7 @@ func TestBlinkOperation(t *testing.T) {
 
 	log.Printf("[output] %s", output)
 
+	stdout := string(output)
 	// stdout, _, _ := utils.ExecContextVerbose(t, ctx, "sudo "+snapMatterPiGPIO+".test-blink")
 
 	// Assert GPIO value
