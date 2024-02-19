@@ -43,15 +43,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download amd64 snap
-        run: wget https://github.com/locnnil/temp-snap-artifact/raw/main/matter-pi-gpio-commander_2.0.0_amd64.snap 
-      
-      # - name: Inject amd64 build
-      #   run: tests/inject-amd64-arch.sh
+      - name: Inject amd64 build
+        run: tests/inject-amd64-arch.sh
    
-      # - name: Build Snap
-      #   uses: snapcore/action-build@v1
-      #   id: snapcraft
+      - name: Build Snap
+        uses: snapcore/action-build@v1
+        id: snapcraft
 
       - name: Setup Go
         uses: actions/setup-go@v4
@@ -64,8 +61,8 @@ jobs:
         env:
           MOCK_GPIO: true
           SKIP_TEARDOWN_REMOVAL: true
-          LOCAL_SERVICE_SNAP: ../matter-pi-gpio-commander_2.0.0_amd64.snap
-        run: go test -failfast -p 1 -timeout 15m -v
+          LOCAL_SERVICE_SNAP: ../${{ steps.snapcraft.outputs.snap }}
+        run: go test -failfast -p 1 -timeout 20m -v
 
       - name: Upload snap logs
         if: always()
