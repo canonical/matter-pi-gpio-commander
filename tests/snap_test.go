@@ -215,16 +215,7 @@ func TestBlinkOperation(t *testing.T) {
 }
 
 func TestWifiMatterCommander(t *testing.T) {
-	// lineNum, err := strconv.Atoi(gpioLine)
-	// if err != nil {
-	// 	t.Fatalf("Failed to convert gpioChip to int: %s", err)
-	// }
-
-	// l, err := gpiod.RequestLine("gpiochip"+gpioChip, lineNum, gpiod.AsOutput(0))
-	// if err != nil {
-	// 	t.Fatalf("Failed to request line: %s", err)
-	// }
-	// defer l.Close()
+	var stdout, stderr string
 
 	// install chip-tool
 	err := utils.SnapInstallFromStore(t, chipToolSnap, utils.ServiceChannel)
@@ -238,8 +229,12 @@ func TestWifiMatterCommander(t *testing.T) {
 
 	time.Sleep(1 * time.Minute)
 
+	// commission
 	t.Run("Commission", func(t *testing.T) {
-		utils.Exec(t, "sudo chip-tool pairing onnetwork 110 20202021")
+		stdout, stderr, err = utils.ExecVerbose(t, "sudo chip-tool pairing onnetwork 110 20202021")
+		assert.Contains(t, stdout, "CHIP:IN: TransportMgr initialized")
+
+		t.Logf("stderr: %s", stderr)
 	})
 
 	time.Sleep(1 * time.Minute)
@@ -248,14 +243,8 @@ func TestWifiMatterCommander(t *testing.T) {
 	t.Run("Control", func(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			expectedValue ^= 1
-			utils.Exec(t, "sudo chip-tool onoff toggle 110 1")
-			// time.Sleep(1 * time.Second)
-			// value, err := l.Value()
-			// if err != nil {
-			// 	t.Fatalf("Failed to get line value: %s", err)
-			// }
-
-			// assert.Equal(t, expectedValue, value)
+			utils.ExecVerbose(t, "sudo chip-tool onoff toggle 110 1")
 		}
+
 	})
 }
