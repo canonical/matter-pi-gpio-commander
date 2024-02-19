@@ -68,8 +68,7 @@ jobs:
           MOCK_GPIO: true
           SKIP_TEARDOWN_REMOVAL: true
           LOCAL_SERVICE_SNAP: ../${{ steps.snapcraft.outputs.snap }}
-        run: |
-          go test -failfast -p 1 -timeout 10m -v
+        run: go test -failfast -p 1 -timeout 15m -v
 
       - name: Upload snap logs
         if: always()

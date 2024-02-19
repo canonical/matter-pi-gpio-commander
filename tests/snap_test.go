@@ -193,6 +193,9 @@ func setupGPIO() error {
 }
 
 func TestBlinkOperation(t *testing.T) {
+	// Test SHELL
+	utils.ExecVerbose(t, "echo $SHELL")
+
 	// test blink operation
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 
@@ -208,7 +211,6 @@ func TestBlinkOperation(t *testing.T) {
 	// Assert log messages
 	assert.Contains(t, stdout, "On")
 	assert.Contains(t, stdout, "Off")
-
 }
 
 func TestWifiMatterCommander(t *testing.T) {
