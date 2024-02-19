@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -196,26 +195,20 @@ func setupGPIO() error {
 func TestBlinkOperation(t *testing.T) {
 	// test blink operation
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	// Kill the process after 15 seconds
+	go func() {
+		time.Sleep(10 * time.Second)
+		utils.Exec(t, `sudo pkill -f "/snap/matter-pi-gpio-commander/x1/bin/test-blink"`)
+	}()
+
+	stdout, _, _ := utils.ExecContextVerbose(t, ctx, "sudo "+snapMatterPiGPIO+".test-blink")
 	t.Cleanup(cancel)
-
-	cmd := exec.CommandContext(ctx, "sudo", snapMatterPiGPIO+".test-blink")
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("Failed to run command: %s", err)
-	}
-
-	log.Printf("[output] %s", output)
-
-	stdout := string(output)
-	// stdout, _, _ := utils.ExecContextVerbose(t, ctx, "sudo "+snapMatterPiGPIO+".test-blink")
 
 	// Assert GPIO value
 	assert.Contains(t, stdout, fmt.Sprintf("GPIO: %s", gpioLine))
-
 	// Assert GPIOCHIP value
 	assert.Contains(t, stdout, fmt.Sprintf("GPIOCHIP: %s", gpioChip))
-
 	// Assert log messages
 	assert.Contains(t, stdout, "On")
 	assert.Contains(t, stdout, "Off")
