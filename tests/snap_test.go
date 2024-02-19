@@ -216,9 +216,10 @@ func TestBlinkOperation(t *testing.T) {
 
 func TestWifiMatterCommander(t *testing.T) {
 	var stdout, stderr string
+	var err error
 
 	// install chip-tool
-	err := utils.SnapInstallFromStore(t, chipToolSnap, utils.ServiceChannel)
+	err = utils.SnapInstallFromStore(t, chipToolSnap, utils.ServiceChannel)
 	if err != nil {
 		t.Fatalf("Failed to install chip-tool: %s", err)
 	}
@@ -227,22 +228,17 @@ func TestWifiMatterCommander(t *testing.T) {
 
 	utils.SnapStart(t, snapMatterPiGPIO)
 
-	// time.Sleep(1 * time.Minute)
-
 	// commission
 	t.Run("Commission", func(t *testing.T) {
-		stdout, stderr, err = utils.ExecVerbose(t, "sudo chip-tool pairing onnetwork 110 20202021")
+		stdout, stderr, err = utils.Exec(t, "sudo chip-tool pairing onnetwork 110 20202021")
 		assert.Contains(t, stdout, "CHIP:IN: TransportMgr initialized")
-
 		t.Logf("stderr: %s", stderr)
 	})
 
-	// time.Sleep(1 * time.Minute)
-
 	t.Run("Control", func(t *testing.T) {
-		for i := 0; i < 10; i++ {
-			utils.ExecVerbose(t, "sudo chip-tool onoff toggle 110 1")
+		for i := 0; i < 4; i++ {
+			stdout, stderr, err = utils.Exec(t, "sudo chip-tool onoff toggle 110 1")
 		}
-
+		assert.Contains(t, stdout, "Success status report received. Session was established")
 	})
 }
