@@ -3,10 +3,13 @@ package tests
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -195,18 +198,53 @@ func setupGPIO() error {
 func TestBlinkOperation(t *testing.T) {
 	// test blink operation
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-
-	// Kill the process after 15 seconds
-	// This is necessary because somehow when running on the GH workflow,
-	// the process does not stop with the cancel context and the test hangs
-	// indefinitely until the timeout is reached. This is a workaround to avoid that.
-	go func() {
-		time.Sleep(10 * time.Second)
-		utils.Exec(t, `sudo pkill -f "/snap/matter-pi-gpio-commander/x*/bin/test-blink"`)
-	}()
-
-	stdout, _, _ := utils.ExecContextVerbose(t, ctx, "sudo "+snapMatterPiGPIO+".test-blink")
 	t.Cleanup(cancel)
+
+	cmd := exec.CommandContext(ctx, "sudo "+snapMatterPiGPIO+".test-blink")
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+
+	stdoutPipe, err := cmd.StdoutPipe()
+	if err != nil {
+		t.Fatalf("Failed to get stdout pipe: %s", err)
+	}
+
+	stderrPipe, err := cmd.StderrPipe()
+	if err != nil {
+		t.Fatalf("Failed to get stderr pipe: %s", err)
+	}
+
+	start := time.Now()
+	time.AfterFunc(10*time.Second, func() {
+		syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+	})
+
+	err = cmd.Start()
+	if err != nil {
+		t.Fatalf("Failed to run command: %s", err)
+	}
+
+	stdoutBytes, err := io.ReadAll(stdoutPipe)
+	if err != nil {
+		t.Fatalf("Failed to read stdout: %s", err)
+	}
+	stdout := string(stdoutBytes)
+
+	stderrBytes, _ := io.ReadAll(stderrPipe)
+	if err != nil {
+		t.Fatalf("Failed to read stderr: %s", err)
+	}
+	stderr := string(stderrBytes)
+
+	err = cmd.Wait()
+	if err != nil {
+		t.Logf("Wait result: %s", err)
+	}
+
+	log.Printf("pid=%d duration=%s err=%s\n", cmd.Process.Pid, time.Since(start), err)
+
+	log.Printf("[stderr] %s", stderr)
+
+	// stdout, _, _ := utils.ExecContextVerbose(t, ctx, "sudo "+snapMatterPiGPIO+".test-blink")
 
 	// Assert GPIO value
 	assert.Contains(t, stdout, fmt.Sprintf("GPIO: %s", gpioLine))
