@@ -193,11 +193,13 @@ func setupGPIO() error {
 }
 
 func TestBlinkOperation(t *testing.T) {
-	// Test SHELL
-	utils.ExecVerbose(t, "echo $SHELL")
-
 	// test blink operation
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	go func() {
+		time.Sleep(15 * time.Second)
+		utils.Exec(t, `sudo pkill -f "/snap/matter-pi-gpio-commander/x1/bin/test-blink"`)
+	}()
 
 	stdout, _, _ := utils.ExecContextVerbose(t, ctx, "sudo "+snapMatterPiGPIO+".test-blink")
 	t.Cleanup(cancel)
