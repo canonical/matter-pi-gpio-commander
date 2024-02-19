@@ -227,7 +227,7 @@ func TestWifiMatterCommander(t *testing.T) {
 
 	utils.SnapStart(t, snapMatterPiGPIO)
 
-	time.Sleep(1 * time.Minute)
+	// time.Sleep(1 * time.Minute)
 
 	// commission
 	t.Run("Commission", func(t *testing.T) {
@@ -237,12 +237,10 @@ func TestWifiMatterCommander(t *testing.T) {
 		t.Logf("stderr: %s", stderr)
 	})
 
-	time.Sleep(1 * time.Minute)
+	// time.Sleep(1 * time.Minute)
 
-	expectedValue := 0 // Initial line value
 	t.Run("Control", func(t *testing.T) {
 		for i := 0; i < 10; i++ {
-			expectedValue ^= 1
 			utils.ExecVerbose(t, "sudo chip-tool onoff toggle 110 1")
 		}
 
