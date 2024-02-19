@@ -197,6 +197,7 @@ func TestBlinkOperation(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 
 	stdout, _, _ := utils.ExecContextVerbose(t, ctx, "sudo "+snapMatterPiGPIO+".test-blink")
+	t.Cleanup(cancel)
 
 	// Assert GPIO value
 	assert.Contains(t, stdout, fmt.Sprintf("GPIO: %s", gpioLine))
@@ -208,7 +209,6 @@ func TestBlinkOperation(t *testing.T) {
 	assert.Contains(t, stdout, "On")
 	assert.Contains(t, stdout, "Off")
 
-	t.Cleanup(cancel)
 }
 
 func TestWifiMatterCommander(t *testing.T) {
