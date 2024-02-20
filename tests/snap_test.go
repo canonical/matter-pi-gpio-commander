@@ -58,7 +58,6 @@ func setup() (teardown func(), err error) {
 		log.Println("Removing installed snap:", !utils.SkipTeardownRemoval)
 		if !utils.SkipTeardownRemoval {
 			utils.SnapRemove(nil, snapMatterPiGPIO)
-			utils.SnapRemove(nil, chipToolSnap)
 			utils.Exec(nil, "./gpio-mock.sh teardown")
 		}
 	}
