@@ -105,6 +105,7 @@ sudo snap connect matter-pi-gpio-commander:avahi-control
 > ```
 
 #### GPIO
+
 The gpio access is granted using the [`custom-device`](https://snapcraft.io/docs/custom-device-interface), which declares a slot to expose the `/dev/gpiochip*` device and also a plug to self connect.
 This interface is auto connected when installing the snap from the Snap Store.
 
