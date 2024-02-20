@@ -72,9 +72,14 @@ func setup() (teardown func(), err error) {
 	// install matter-pi-gpio-commander
 	if utils.LocalServiceSnap() {
 		err = utils.SnapInstallFromFile(nil, newSnapPath)
+		utils.SnapConnect(nil, snapMatterPiGPIO+":custom-gpio", snapMatterPiGPIO+":custom-gpio-dev")
 	} else {
 		err = utils.SnapInstallFromStore(nil, snapMatterPiGPIO, utils.ServiceChannel)
 	}
+
+	utils.SnapConnect(nil, snapMatterPiGPIO+":avahi-control", "")
+	utils.SnapConnect(nil, snapMatterPiGPIO+":bluez", "")
+
 	if err != nil {
 		teardown()
 		return
@@ -84,13 +89,6 @@ func setup() (teardown func(), err error) {
 		teardown()
 		return
 	}
-
-	// connect interfaces:
-	utils.SnapConnect(nil, snapMatterPiGPIO+":avahi-control", "")
-	utils.SnapConnect(nil, snapMatterPiGPIO+":bluez", "")
-	utils.SnapConnect(nil, snapMatterPiGPIO+":network", "")
-	utils.SnapConnect(nil, snapMatterPiGPIO+":network-bind", "")
-	utils.SnapConnect(nil, snapMatterPiGPIO+":custom-gpio", snapMatterPiGPIO+":custom-gpio-dev")
 
 	return
 }
