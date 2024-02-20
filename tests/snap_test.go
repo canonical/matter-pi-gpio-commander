@@ -196,7 +196,8 @@ func TestBlinkOperation(t *testing.T) {
 	// test blink operation
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
-	// Kill the process after 15 seconds
+	// Force kill the process
+	// This is required because on GH Runner, the cancellation only kills the parent process
 	go func() {
 		time.Sleep(10 * time.Second)
 		utils.Exec(t, `sudo pkill -f "/snap/matter-pi-gpio-commander/x1/bin/test-blink"`)
