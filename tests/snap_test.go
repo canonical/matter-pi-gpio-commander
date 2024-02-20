@@ -196,8 +196,7 @@ func TestBlinkOperation(t *testing.T) {
 	// test blink operation
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
-	// Force kill the process
-	// This is required because on GH Runner, the cancellation only kills the parent process
+	// Force kill the process see issue https://github.com/canonical/matter-snap-testing/issues/17
 	go func() {
 		time.Sleep(10 * time.Second)
 		utils.Exec(t, `sudo pkill -f "/snap/matter-pi-gpio-commander/x1/bin/test-blink"`)
