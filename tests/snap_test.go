@@ -41,6 +41,7 @@ func TestMain(m *testing.M) {
 
 func setup() (teardown func(), err error) {
 	var start = time.Now()
+	var newSnapPath string
 
 	log.Println("[CLEAN]")
 	utils.SnapRemove(nil, snapMatterPiGPIO)
@@ -52,7 +53,7 @@ func setup() (teardown func(), err error) {
 		log.Println("[TEARDOWN]")
 		utils.SnapDumpLogs(nil, start, snapMatterPiGPIO)
 
-		utils.Exec(nil, "rm "+newPath)
+		utils.Exec(nil, "rm "+newSnapPath)
 
 		log.Println("Removing installed snap:", !utils.SkipTeardownRemoval)
 		if !utils.SkipTeardownRemoval {
@@ -63,14 +64,14 @@ func setup() (teardown func(), err error) {
 	}
 
 	// setup gpio mock
-	if newPath, err = setupGPIOMock(utils.LocalServiceSnapPath); err != nil {
+	if newSnapPath, err = setupGPIOMock(utils.LocalServiceSnapPath); err != nil {
 		teardown()
 		return
 	}
 
 	// install matter-pi-gpio-commander
 	if utils.LocalServiceSnap() {
-		err = utils.SnapInstallFromFile(nil, newPath)
+		err = utils.SnapInstallFromFile(nil, newSnapPath)
 	} else {
 		err = utils.SnapInstallFromStore(nil, snapMatterPiGPIO, utils.ServiceChannel)
 	}
