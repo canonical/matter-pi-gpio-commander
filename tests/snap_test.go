@@ -221,6 +221,8 @@ func TestWifiMatterCommander(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to install chip-tool: %s", err)
 	}
+	t.Cleanup(func() { utils.SnapRemove(t, chipToolSnap) })
+
 	// chip-tool interfaces
 	utils.SnapConnect(nil, chipToolSnap+":avahi-observe", "")
 
