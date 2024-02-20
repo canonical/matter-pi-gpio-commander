@@ -228,6 +228,7 @@ func TestWifiMatterCommander(t *testing.T) {
 	utils.SnapConnect(nil, chipToolSnap+":avahi-observe", "")
 
 	utils.SnapStart(t, snapMatterPiGPIO)
+	t.Cleanup(func(){utils.SnapStop(t, snapMatterPiGPIO)})
 
 	// commission
 	t.Run("Commission", func(t *testing.T) {
