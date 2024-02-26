@@ -11,26 +11,27 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      arch: amd64
     steps:
-
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v3
         with:
-          platforms: arm64
+          platforms: ${{ env.arch }}
 
       - name: Build snap for arm64
         uses: diddlesnaps/snapcraft-multiarch-action@v1
         id: build
         with:
-          architecture: ${{ matrix.platform }}
+          architecture: ${{ env.arch }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: matter-pi-gpio-commander_${{ github.run_number}}_${{ matrix.platform }}.snap
+          name: matter-pi-gpio-commander_${{ github.run_number}}_${{ env.arch }}.snap
           path: ${{ steps.build.outputs.snap }}
 
   test:
