@@ -9,34 +9,35 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    env:
-      arch: arm64
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # build:
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     arch: arm64
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Setup QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: ${{ env.arch }}
+  #     - name: Setup QEMU
+  #       uses: docker/setup-qemu-action@v3
+  #       with:
+  #         platforms: ${{ env.arch }}
 
-      - name: Build snap for arm64
-        uses: diddlesnaps/snapcraft-multiarch-action@v1
-        id: build
-        with:
-          architecture: ${{ env.arch }}
+  #     - name: Build snap for arm64
+  #       uses: diddlesnaps/snapcraft-multiarch-action@v1
+  #       id: build
+  #       with:
+  #         architecture: ${{ env.arch }}
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: matter-pi-gpio-commander_${{ github.run_number}}_${{ env.arch }}.snap
-          path: ${{ steps.build.outputs.snap }}
+  #     - name: Upload artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: matter-pi-gpio-commander_${{ github.run_number}}_${{ env.arch }}.snap
+  #         path: ${{ steps.build.outputs.snap }}
 
   test:
+    # needs: build
     runs-on: 
-      - ubuntu-latest
+      # - ubuntu-latest
       - Ubuntu_ARM64_4C_16G_01
     steps:
       - name: Checkout code
@@ -53,7 +54,7 @@ jobs:
         env:
           MOCK_GPIO: true
           SKIP_TEARDOWN_REMOVAL: true
-          LOCAL_SERVICE_SNAP: ../${{ steps.snapcraft.outputs.snap }}
+          # LOCAL_SERVICE_SNAP: ../${{ steps.snapcraft.outputs.snap }}
         run: go test -failfast -p 1 -timeout 20m -v
 
       - name: Upload snap logs
