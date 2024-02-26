@@ -9,12 +9,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-arm64:
+  build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        platform: 
-          - arm64
     steps:
 
       - name: Checkout code
@@ -23,7 +19,7 @@ jobs:
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v3
         with:
-          platforms: ${{ matrix.platform }}
+          platforms: arm64
 
       - name: Build snap for arm64
         uses: diddlesnaps/snapcraft-multiarch-action@v1
@@ -37,18 +33,13 @@ jobs:
           name: matter-pi-gpio-commander_${{ github.run_number}}_${{ matrix.platform }}.snap
           path: ${{ steps.build.outputs.snap }}
 
-  build-and-test-amd64:
-    runs-on: ubuntu-latest
+  test:
+    runs-on: 
+      - ubuntu-latest
+      - Ubuntu_ARM64_4C_16G_01
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Inject amd64 build
-        run: tests/inject-amd64-arch.sh
-   
-      - name: Build Snap
-        uses: snapcore/action-build@v1
-        id: snapcraft
 
       - name: Setup Go
         uses: actions/setup-go@v5
