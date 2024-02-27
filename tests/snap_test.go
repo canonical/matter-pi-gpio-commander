@@ -99,7 +99,7 @@ func setupGPIOMock(snapPath string) (string, error) {
 
 	// check if gpio mock is enabled AND the service is running locally
 	// Run gpio mockup script
-	_, stderr, err := utils.Exec(nil, "./gpio-mock.sh")
+	_, stderr, err := utils.ExecVerbose(nil, "./gpio-mock.sh")
 	if err != nil {
 		return snapPath, fmt.Errorf("Failed to run gpio mockup script %s: %s", stderr, err)
 	}
