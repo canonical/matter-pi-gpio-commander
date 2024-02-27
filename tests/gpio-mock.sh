@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -ex
+
 if [ "$1" = "teardown" ]; then
 	sudo rmmod gpio_mockup
 	rm -rf gpio-mockup
