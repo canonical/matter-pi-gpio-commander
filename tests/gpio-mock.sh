@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -ex
+set -e
 
 if [ "$1" = "teardown" ]; then
 	sudo rmmod gpio_mockup
@@ -13,8 +13,8 @@ cd gpio-mockup
 
 # Update and install dependencies
 sudo apt-get update
-sudo apt-get install -y linux-headers-$(uname -r)
-sudo apt-get install -y build-essential flex bison make
+sudo apt-get install -qy linux-headers-$(uname -r)
+sudo apt-get install -qy build-essential flex bison make
 
 kernel_major_minor=$(uname -r | cut -d'.' -f1-2)
 
