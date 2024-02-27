@@ -55,7 +55,10 @@ jobs:
           MOCK_GPIO: true
           SKIP_TEARDOWN_REMOVAL: true
           # LOCAL_SERVICE_SNAP: ../${{ steps.snapcraft.outputs.snap }}
-        run: go test -failfast -p 1 -timeout 20m -v
+          LOCAL_SERVICE_SNAP: "*.snap"
+        run: |
+          snap download matter-pi-gpio-commander --edge
+          go test -failfast -p 1 -timeout 20m -v
 
       - name: Upload snap logs
         if: always()
