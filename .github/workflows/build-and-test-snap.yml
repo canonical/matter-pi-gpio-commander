@@ -43,6 +43,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install TMUX
+        run: sudo apt-get update && sudo apt-get install -y tmux
+
+      - name: Run TMUX
+        run: tmux new-session -d
+
       - name: Setup SSH session
         uses: lhotari/action-upterm@v1 
 
@@ -69,3 +75,6 @@ jobs:
         with:
           name: snap-logs
           path: tests/*.log
+
+      - name: Examine results
+        run: sleep 3600 # Examine results for 1 hour
