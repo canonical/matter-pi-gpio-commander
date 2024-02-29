@@ -39,7 +39,7 @@ make -j$(nproc)
 
 sudo insmod gpio-mockup.ko gpio_mockup_ranges=-1,16 gpio_mockup_named_lines
 
-gpio_mock_chip=$(ls /dev/gpiochip* | sort -n | head -n 1)
+gpio_mock_chip=$(ls /dev/gpiochip* | sort -n | tail -n 1)
 
 echo "GPIO Mockup chip: $gpio_mock_chip"
 
