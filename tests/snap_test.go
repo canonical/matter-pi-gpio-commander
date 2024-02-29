@@ -198,7 +198,7 @@ func TestMockingGPIO(t *testing.T) {
 	utils.ExecVerbose(t, "sudo gpiodetect")
 	utils.ExecVerbose(t, "sudo dmesg | grep gpio")
 	utils.ExecVerbose(t, "ls /lib/modules/$(uname -r)/kernel/drivers/")
-	utils.ExecVerbose(t, "sudo cat /boot/config-$(uname -r)")
+	utils.ExecVerbose(t, "sudo cat /boot/config-$(uname -r) | grep -E 'IRQ|GPIO'")
 	utils.ExecVerbose(t, "sudo gpioinfo")
 	utils.ExecVerbose(t, "sudo ls -la /sys/kernel/debug/gpio-mockup/gpiochip"+gpioChip)
 
