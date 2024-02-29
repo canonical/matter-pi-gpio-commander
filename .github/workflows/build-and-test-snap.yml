@@ -44,7 +44,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Get Runner informations 
-        run: sudo apt-get update && sudo apt-get install -y neofetch gpiod libgpiod-dev libgpiod2 && neofetch; uname -a; 
+        run: sudo apt-get update && sudo apt-get install -y gpiod libgpiod-dev libgpiod2; uname -a; 
 
       - name: Setup Go
         uses: actions/setup-go@v5
