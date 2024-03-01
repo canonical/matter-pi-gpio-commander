@@ -45,6 +45,13 @@ jobs:
 
       - name: Get Runner informations 
         run: sudo apt-get update && sudo apt-get install -y gpiod libgpiod-dev libgpiod2; uname -a; 
+      
+      - name: Get Kernel Runner config
+        working-directory: tests
+        run: sudo cat /boot/config-$(uname -r) > config-$(uname -r).log
+
+      - name: Get CPU information
+        run: cat /proc/cpuinfo
 
       - name: Setup Go
         uses: actions/setup-go@v5
