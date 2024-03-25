@@ -73,7 +73,7 @@ parts:
   zap:
     plugin: nil
     build-environment:
-      - ZAP_VERSION: v2024.01.20
+      - ZAP_VERSION: v2024.03.16-nightly
     build-packages:
       - wget
       - unzip
