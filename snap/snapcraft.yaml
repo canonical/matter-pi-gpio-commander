@@ -50,37 +50,28 @@ parts:
     source-branch: v2.1
     override-build: |
 
-      # mkdir -p $CRAFT_PART_BUILD/installed
       mkdir -p $CRAFT_PART_INSTALL/usr/
       ./autogen.sh --prefix=$CRAFT_PART_INSTALL/usr --enable-bindings-cxx
       make install -j$(nproc)
 
-      cp include/gpiod.h $CRAFT_STAGE/gpiod.h 
+      cp include/gpiod.h $CRAFT_STAGE/gpiod.h
       
       mkdir -p /usr/lib/aarch64-linux-gnu
       cd $CRAFT_PART_INSTALL/usr/lib
       rm *.a *.la
-      cp $CRAFT_PART_INSTALL/usr/lib/libgpiod.so* /usr/lib/aarch64-linux-gnu
+
+      if [[ $SNAP_ARCH == "arm64" ]]; then
+        cp $CRAFT_PART_INSTALL/usr/lib/libgpiod.so* /usr/lib/aarch64-linux-gnu
+      fi
+
+      if [[ $SNAP_ARCH == "amd64" ]]; then
+        cp $CRAFT_PART_INSTALL/usr/lib/libgpiod.so* /usr/lib/x86_64-linux-gnu
+      fi
+
+      # Install in the system for all parts
+      cp $CRAFT_PART_INSTALL/usr/include/gpiod.* /usr/include/
 
 
-      # ./autogen.sh --prefix=/usr/
-      # make install -j$(nproc)
-
-      # mkdir aarch64-linux-gnu
-      # mv libgpiod* aarch64-linux-gnu
-
-      # cd /usr/lib
-      # rm *.a *.la
-      # mv libgpiod* aarch64-linux-gnu
-
-      # Export .a and header files to be used
-      # cp lib/.libs/libgpiod.a $CRAFT_STAGE/libgpiod.a
-      # cp include/gpiod.h $CRAFT_STAGE/gpiod.h
-
-      # make install
-      # mkdir -p $CRAFT_PART_INSTALL/lib
-      # rm -rf $CRAFT_PART_BUILD/lib/pkgconfig
-      # cp -r $CRAFT_PART_BUILD/lib/* $CRAFT_PART_INSTALL/lib/
     build-packages:
       - g++
       - gcc
@@ -98,21 +89,16 @@ parts:
     source: .
     override-build: |
 
-      # g++ -Wall -I$CRAFT_STAGE -L$CRAFT_STAGE test-blink.cpp \
-      # -lgpiod -static -o test-blink
-
       g++ -Wall test-blink.cpp -lgpiod -o test-blink
 
       mkdir -p $CRAFT_PART_INSTALL/bin
       cp test-blink $CRAFT_PART_INSTALL/bin/
 
-
     build-packages:
       - g++
       - gcc
       - libgpiod-dev
-    # stage-packages:
-    #  - libgpiod2
+      - tree
   
   connectedhomeip:
     plugin: nil
@@ -126,7 +112,6 @@ parts:
       # shallow clone the submodules
       scripts/checkout_submodules.py --shallow --platform linux
 
-
   zap:
     plugin: nil
     build-environment:
@@ -135,12 +120,6 @@ parts:
       - wget
       - unzip
     override-build: |
-
-      echo -e "\n\n\n\n\n\n\n\n\n"
-      echo "-----zap------"
-      echo "CRAFT_PART_INSTALL:"
-      echo $CRAFT_PART_INSTALL
-      echo -e "\n\n\n\n\n\n\n\n\n"
 
       if [[ $SNAP_ARCH == "arm64" ]]; then
         # Download and unzip the prebuilt ZAP (Zigbee Cluster Library configuration tool and generator) binary for the ARM64 architecture
@@ -160,7 +139,6 @@ parts:
     override-build: |
 
       cp $CRAFT_STAGE/gpiod.h linux/include 
-      # cp $CRAFT_STAGE/libgpiod.a linux/include
 
       # Setup ZAP paths; installed in the corresponding part
       test -f $ZAP_ENV && source $ZAP_ENV
@@ -222,8 +200,6 @@ parts:
       - libreadline-dev
       - generate-ninja
       - libgpiod-dev 
-    #stage-packages:
-    #  - libgpiod2
 
   local-bin:
     plugin: nil
