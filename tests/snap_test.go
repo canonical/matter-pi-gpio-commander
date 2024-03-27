@@ -196,7 +196,7 @@ func TestBlinkOperation(t *testing.T) {
 	// Force kill the process see issue https://github.com/canonical/matter-snap-testing/issues/17
 	go func() {
 		time.Sleep(10 * time.Second)
-		utils.Exec(t, `sudo pkill -f "/snap/matter-pi-gpio-commander/x1/bin/test-blink"`)
+		utils.Exec(t, `sudo pkill -f "test-blink"`)
 	}()
 
 	stdout, _, _ := utils.ExecContextVerbose(t, ctx, "sudo "+snapMatterPiGPIO+".test-blink")
