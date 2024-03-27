@@ -40,6 +40,7 @@ config("includes") {
 executable("chip-lighting-app") {
   sources = [
     "LightingAppCommandDelegate.cpp",
+    "include/gpiod.h",
     "include/CHIPProjectAppConfig.h",
     "include/LightingManager.h",
     "src/LightingManager.cpp",
@@ -112,6 +113,9 @@ executable("chip-lighting-app") {
   }
 
   libs = [ "gpiod" ]
+  ldflags = [
+    "-lgpiod"
+  ]
 
   output_dir = root_out_dir
 }
