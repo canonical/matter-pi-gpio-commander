@@ -9,46 +9,49 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-arm64:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        platform: 
-          - arm64
-    steps:
+  # build:
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     arch: arm64
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
+  #     - name: Setup QEMU
+  #       uses: docker/setup-qemu-action@v3
+  #       with:
+  #         platforms: ${{ env.arch }}
+
+  #     - name: Build snap for arm64
+  #       uses: diddlesnaps/snapcraft-multiarch-action@v1
+  #       id: build
+  #       with:
+  #         architecture: ${{ env.arch }}
+
+  #     - name: Upload artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: matter-pi-gpio-commander_${{ github.run_number}}_${{ env.arch }}.snap
+  #         path: ${{ steps.build.outputs.snap }}
+
+  test:
+    # needs: build
+    runs-on: 
+      # - ubuntu-latest
+      - Ubuntu_ARM64_4C_16G_01
+    steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: ${{ matrix.platform }}
+      - name: Get Runner informations 
+        run: sudo apt-get update && sudo apt-get install -y gpiod libgpiod-dev libgpiod2; uname -a; 
+      
+      - name: Get Kernel Runner config
+        working-directory: tests
+        run: sudo cat /boot/config-$(uname -r) > config-$(uname -r).log
 
-      - name: Build snap for arm64
-        uses: diddlesnaps/snapcraft-multiarch-action@v1
-        id: build
-        with:
-          architecture: ${{ matrix.platform }}
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: matter-pi-gpio-commander_${{ github.run_number}}_${{ matrix.platform }}.snap
-          path: ${{ steps.build.outputs.snap }}
-
-  build-and-test-amd64:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Inject amd64 build
-        run: tests/inject-amd64-arch.sh
-   
-      - name: Build Snap
-        uses: snapcore/action-build@v1
-        id: snapcraft
+      - name: Get CPU information
+        run: cat /proc/cpuinfo
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -61,8 +64,11 @@ jobs:
         env:
           MOCK_GPIO: true
           SKIP_TEARDOWN_REMOVAL: true
-          LOCAL_SERVICE_SNAP: ../${{ steps.snapcraft.outputs.snap }}
-        run: go test -failfast -p 1 -timeout 20m -v
+          # LOCAL_SERVICE_SNAP: ../${{ steps.snapcraft.outputs.snap }}
+          LOCAL_SERVICE_SNAP: "*.snap"
+        run: |
+          snap download matter-pi-gpio-commander --edge
+          go test -failfast -p 1 -timeout 20m -v
 
       - name: Upload snap logs
         if: always()

@@ -99,7 +99,7 @@ func setupGPIOMock(snapPath string) (string, error) {
 
 	// check if gpio mock is enabled AND the service is running locally
 	// Run gpio mockup script
-	_, stderr, err := utils.Exec(nil, "./gpio-mock.sh")
+	_, stderr, err := utils.ExecVerbose(nil, "./gpio-mock.sh")
 	if err != nil {
 		return snapPath, fmt.Errorf("Failed to run gpio mockup script %s: %s", stderr, err)
 	}
@@ -187,6 +187,28 @@ func setupGPIO() error {
 	utils.SnapSet(nil, snapMatterPiGPIO, "gpio", gpioLine)
 
 	return nil
+}
+
+func TestMockingGPIO(t *testing.T) {
+	if !useGPIOMock() {
+		t.Skip("Skipping GPIO Mock test")
+	}
+	utils.ExecVerbose(t, "lsmod | head")
+	utils.ExecVerbose(t, "ls -la /dev/gpio*")
+	utils.ExecVerbose(t, "sudo gpiodetect")
+	utils.ExecVerbose(t, "sudo dmesg | grep gpio")
+	utils.ExecVerbose(t, "ls /lib/modules/$(uname -r)/kernel/drivers/")
+	utils.ExecVerbose(t, "sudo cat /boot/config-$(uname -r) | grep -E 'IRQ|GPIO'")
+	utils.ExecVerbose(t, "apt search gpiod | grep installed")
+	utils.ExecVerbose(t, "sudo gpioinfo")
+	utils.ExecVerbose(t, "sudo ls -la /sys/kernel/debug/gpio-mockup/gpiochip"+gpioChip)
+
+	// test gpio mock
+	for i := 0; i < 4; i++ {
+		utils.ExecVerbose(t, "sudo gpioset "+gpioChip+" "+gpioLine+"=1")
+		time.Sleep(5 * time.Second)
+		utils.ExecVerbose(t, "sudo gpioset "+gpioChip+" "+gpioLine+"=0")
+	}
 }
 
 func TestBlinkOperation(t *testing.T) {

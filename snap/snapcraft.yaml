@@ -44,6 +44,31 @@ layout:
     bind: $SNAP_COMMON/mnt
 
 parts:
+  libgpiod:
+    plugin: nil
+    source: .
+    override-build: |
+      git clone --depth=1 git://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git --branch v2.1
+      mkdir gpiod
+      ./libgpiod/autogen.sh --prefix=$CRAFT_PART_BUILD
+      make -j$(nproc)
+      make install
+      mkdir -p $CRAFT_PART_INSTALL/lib
+      rm -rf $CRAFT_PART_BUILD/lib/pkgconfig
+      cp -r $CRAFT_PART_BUILD/lib/* $CRAFT_PART_INSTALL/lib/
+
+    build-packages:
+      - g++
+      - gcc
+      - libgpiod-dev
+      - git
+      - autoconf
+      - automake
+      - pkg-config
+      - autoconf-archive
+      - libtool
+      - make
+
   test-blink:
     plugin: nil
     source: .
@@ -54,10 +79,8 @@ parts:
     build-packages:
       - g++
       - gcc
-      - libgpiod-dev
-    stage-packages:
-      - libgpiod2
-  
+      - git
+
   connectedhomeip:
     plugin: nil
     source: https://github.com/project-chip/connectedhomeip.git
@@ -153,9 +176,6 @@ parts:
       - libcairo2-dev
       - libreadline-dev
       - generate-ninja
-      - libgpiod-dev 
-    stage-packages:
-      - libgpiod2
 
   local-bin:
     plugin: nil

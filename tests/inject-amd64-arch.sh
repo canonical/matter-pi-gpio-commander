@@ -1,1 +1,0 @@
- sed -i '/architectures:/a \ \ - build-on: amd64' snap/snapcraft.yaml

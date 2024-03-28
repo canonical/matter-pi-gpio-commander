@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 if [ "$1" = "teardown" ]; then
 	sudo rmmod gpio_mockup
 	rm -rf gpio-mockup
@@ -11,8 +13,8 @@ cd gpio-mockup
 
 # Update and install dependencies
 sudo apt-get update
-sudo apt-get install -y linux-headers-$(uname -r)
-sudo apt-get install -y build-essential flex bison make
+sudo apt-get install -qy linux-headers-$(uname -r)
+sudo apt-get install -qy build-essential flex bison make
 
 kernel_major_minor=$(uname -r | cut -d'.' -f1-2)
 
@@ -37,7 +39,7 @@ make -j$(nproc)
 
 sudo insmod gpio-mockup.ko gpio_mockup_ranges=-1,16 gpio_mockup_named_lines
 
-gpio_mock_chip=$(ls /dev/gpiochip* | sort -n | head -n 1)
+gpio_mock_chip=$(ls /dev/gpiochip* | sort -n | tail -n 1)
 
 echo "GPIO Mockup chip: $gpio_mock_chip"
 
