@@ -44,19 +44,64 @@ layout:
     bind: $SNAP_COMMON/mnt
 
 parts:
+  libgpiod:
+    # NOTE: The deb package libgpiod2 is not being used anymore because
+    # the ARM64 Runner on GH needs the library in it's API v2 form. 
+    # Refer to https://github.com/canonical/matter-pi-gpio-commander/issues/53
+    plugin: nil
+    source: git://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git
+    source-branch: v2.1
+    override-build: |
+
+      mkdir -p $CRAFT_PART_INSTALL/usr/
+      ./autogen.sh --prefix=$CRAFT_PART_INSTALL/usr --enable-bindings-cxx
+      make install -j$(nproc)
+
+      cp include/gpiod.h $CRAFT_STAGE/gpiod.h
+      
+      mkdir -p /usr/lib/aarch64-linux-gnu
+      cd $CRAFT_PART_INSTALL/usr/lib
+      rm *.a *.la
+
+      if [[ $SNAP_ARCH == "arm64" ]]; then
+        cp $CRAFT_PART_INSTALL/usr/lib/libgpiod.so* /usr/lib/aarch64-linux-gnu
+      fi
+
+      if [[ $SNAP_ARCH == "amd64" ]]; then
+        cp $CRAFT_PART_INSTALL/usr/lib/libgpiod.so* /usr/lib/x86_64-linux-gnu
+      fi
+
+      # Install in the system for all parts
+      cp $CRAFT_PART_INSTALL/usr/include/gpiod.* /usr/include/
+
+
+    build-packages:
+      - g++
+      - gcc
+      - git
+      - autoconf
+      - automake
+      - pkg-config
+      - autoconf-archive
+      - libtool
+      - make
+
   test-blink:
+    after: [libgpiod]
     plugin: nil
     source: .
     override-build: |
+
       g++ -Wall test-blink.cpp -lgpiod -o test-blink
+
       mkdir -p $CRAFT_PART_INSTALL/bin
       cp test-blink $CRAFT_PART_INSTALL/bin/
+
     build-packages:
       - g++
       - gcc
       - libgpiod-dev
-    stage-packages:
-      - libgpiod2
+      - tree
   
   connectedhomeip:
     plugin: nil
@@ -65,10 +110,10 @@ parts:
     source-tag: master
     source-submodules: []
     override-pull: |
+
       craftctl default
       # shallow clone the submodules
       scripts/checkout_submodules.py --shallow --platform linux
-
 
   zap:
     plugin: nil
@@ -78,6 +123,7 @@ parts:
       - wget
       - unzip
     override-build: |
+
       if [[ $SNAP_ARCH == "arm64" ]]; then
         # Download and unzip the prebuilt ZAP (Zigbee Cluster Library configuration tool and generator) binary for the ARM64 architecture
         wget --no-verbose https://github.com/project-chip/zap/releases/download/$ZAP_VERSION/zap-linux-$SNAP_ARCH.zip
@@ -88,12 +134,15 @@ parts:
       fi
 
   lighting:
-    after: [connectedhomeip, zap]
+    after: [libgpiod, test-blink, connectedhomeip, zap]
     plugin: nil
     source: app
     build-environment:
       - ZAP_ENV: ../../zap/build/env
     override-build: |
+
+      cp $CRAFT_STAGE/gpiod.h linux/include 
+
       # Setup ZAP paths; installed in the corresponding part
       test -f $ZAP_ENV && source $ZAP_ENV
       
@@ -154,8 +203,6 @@ parts:
       - libreadline-dev
       - generate-ninja
       - libgpiod-dev 
-    stage-packages:
-      - libgpiod2
 
   local-bin:
     plugin: nil
