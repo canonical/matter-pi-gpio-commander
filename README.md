@@ -30,13 +30,41 @@ sudo snap install matter-pi-gpio-commander
 ```
 
 ### Configure
-#### Set the pin
+
+As the project now (starting on release `v2.0.0`) uses the
+[character device](https://docs.kernel.org/userspace-api/gpio/chardev.html)
+for drive gpio operations, so it's necessay to configure the chip and line to be
+used.
+
+#### Set the chip
+
+This step is exclusive to v.2.x and later versions. To set the chip for the
+`/dev/gpiochip0`:
+
+```bash
+sudo snap set matter-pi-gpio-commander gpiochip=0
+```
+Currently, the options possible for of chip to be configured are `gpiochip4`
+in case of using RPi5 and `gpiochip0` for all the other legacy arm64/AArch64
+raspberries.
+
+If for some specific case you want to use a different chip, you can set:
+
+```bash
+sudo snap set matter-pi-gpio-commander gpiochip-validation=false
+```
+
+Then you can set whathever chip you want.
+
+#### Set the line
+
+To set the line `4`:
 
 ```bash
 sudo snap set matter-pi-gpio-commander gpio=4
 ```
 
-Make sure to also [grant the GPIO access](#GPIO).
+In case of using the `v1.x.x` make sure to also [grant the GPIO access](#GPIO).
 
 #### Set CLI flags
 By default, the lighting app runs as a service without any CLI flags.
