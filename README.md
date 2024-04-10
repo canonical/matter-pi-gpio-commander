@@ -35,7 +35,7 @@ sudo snap install matter-pi-gpio-commander
 
 Starting with v2, the project uses the
 [character device](https://docs.kernel.org/userspace-api/gpio/chardev.html)
-for drive gpio operations, so it's necessary to configure the chip to be
+for gpio operations, so it's necessary to configure the chip to be
 used. The chip number is set to `0` by default.
 
 For example, to set the chip for the
