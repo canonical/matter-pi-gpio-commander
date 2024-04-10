@@ -49,7 +49,7 @@ parts:
     # the ARM64 Runner on GH needs the library in it's API v2 form. 
     # Refer to https://github.com/canonical/matter-pi-gpio-commander/issues/53
     plugin: nil
-    source: git://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git
+    source: https://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git
     source-branch: v2.1
     override-build: |
 
