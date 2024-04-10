@@ -55,7 +55,7 @@ sudo snap set matter-pi-gpio-commander gpiochip-validation=false
 
 Then you can set whathever chip you want.
 
-#### Set the line
+#### Set the GPIO line
 
 To set the line `4`:
 
