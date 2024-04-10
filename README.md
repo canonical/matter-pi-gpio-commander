@@ -31,22 +31,21 @@ sudo snap install matter-pi-gpio-commander
 
 ### Configure
 
-As the project now (starting on release `v2.0.0`) uses the
+#### Set the GPIO chip
+
+Starting with v2, the project uses the
 [character device](https://docs.kernel.org/userspace-api/gpio/chardev.html)
-for drive gpio operations, so it's necessay to configure the chip and line to be
-used.
+for drive gpio operations, so it's necessary to configure the chip to be
+used. The chip number is set to `0` by default.
 
-#### Set the chip
-
-This step is exclusive to v.2.x and later versions. To set the chip for the
-`/dev/gpiochip0`:
+For example, to set the chip for the
+`/dev/gpiochip4`:
 
 ```bash
-sudo snap set matter-pi-gpio-commander gpiochip=0
+sudo snap set matter-pi-gpio-commander gpiochip=4
 ```
-Currently, the options possible for of chip to be configured are `gpiochip4`
-in case of using RPi5 and `gpiochip0` for all the other legacy arm64/AArch64
-raspberries.
+Currently, the options possible for of chip to be configured are `4`
+in case of using RPi5 and `0` for all the other legacy arm64 Raspberry Pis.
 
 If for some specific case you want to use a different chip, you can set:
 
