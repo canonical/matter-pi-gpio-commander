@@ -136,12 +136,12 @@ parts:
   lighting:
     after: [libgpiod, test-blink, connectedhomeip, zap]
     plugin: nil
-    source: app
+    source: .
     build-environment:
       - ZAP_ENV: ../../zap/build/env
     override-build: |
 
-      cp $CRAFT_STAGE/gpiod.h linux/include 
+      cp $CRAFT_STAGE/gpiod.h app/linux/include 
 
       # Setup ZAP paths; installed in the corresponding part
       test -f $ZAP_ENV && source $ZAP_ENV
@@ -173,18 +173,19 @@ parts:
       source scripts/activate.sh
       set -u
 
-      # Copy and replace the application files
-      cp -vr $CRAFT_PART_BUILD/lighting-common/* examples/lighting-app/lighting-common/
-      cp -vr $CRAFT_PART_BUILD/linux/* examples/lighting-app/linux
+      # Add the App to be build from CHIP SDK's build system
+      # See https://github.com/project-chip/connectedhomeip/issues/32925
+      cp -vr $CRAFT_PART_BUILD/app examples/
 
-      cd examples/lighting-app/linux
+      cd examples/app/linux
       gn gen out/build
       ninja -C out/build
 
-      ldd out/build/chip-lighting-app
+      ls out/build
+      ldd out/build/chip-gpio-app
       
       mkdir -p $CRAFT_PART_INSTALL/bin
-      cp out/build/chip-lighting-app $CRAFT_PART_INSTALL/bin/lighting-app        
+      cp out/build/chip-gpio-app $CRAFT_PART_INSTALL/bin/lighting-app        
     build-packages:
       - git
       - gcc
