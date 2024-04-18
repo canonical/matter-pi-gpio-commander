@@ -136,12 +136,12 @@ parts:
   lighting:
     after: [libgpiod, test-blink, connectedhomeip, zap]
     plugin: nil
-    source: app
+    source: .
     build-environment:
       - ZAP_ENV: ../../zap/build/env
     override-build: |
 
-      cp $CRAFT_STAGE/gpiod.h linux/include 
+      cp $CRAFT_STAGE/gpiod.h app/linux/include 
 
       # Setup ZAP paths; installed in the corresponding part
       test -f $ZAP_ENV && source $ZAP_ENV
