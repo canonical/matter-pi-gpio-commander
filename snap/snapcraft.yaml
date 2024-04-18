@@ -115,30 +115,30 @@ parts:
       # shallow clone the submodules
       scripts/checkout_submodules.py --shallow --platform linux
 
-  zap:
-    plugin: nil
-    build-environment:
-      - ZAP_VERSION: v2024.03.16-nightly
-    build-packages:
-      - wget
-      - unzip
-    override-build: |
+  # zap:
+  #   plugin: nil
+  #   build-environment:
+  #     - ZAP_VERSION: v2024.03.16-nightly
+  #   build-packages:
+  #     - wget
+  #     - unzip
+  #   override-build: |
 
-      if [[ $SNAP_ARCH == "arm64" ]]; then
-        # Download and unzip the prebuilt ZAP (Zigbee Cluster Library configuration tool and generator) binary for the ARM64 architecture
-        wget --no-verbose https://github.com/project-chip/zap/releases/download/$ZAP_VERSION/zap-linux-$SNAP_ARCH.zip
-        unzip -o zap-linux-$SNAP_ARCH.zip
+  #     if [[ $SNAP_ARCH == "arm64" ]]; then
+  #       # Download and unzip the prebuilt ZAP (Zigbee Cluster Library configuration tool and generator) binary for the ARM64 architecture
+  #       wget --no-verbose https://github.com/project-chip/zap/releases/download/$ZAP_VERSION/zap-linux-$SNAP_ARCH.zip
+  #       unzip -o zap-linux-$SNAP_ARCH.zip
 
-        # Define the environment needed for the app build
-        echo "export ZAP_INSTALL_PATH=$PWD" >> env
-      fi
+  #       # Define the environment needed for the app build
+  #       echo "export ZAP_INSTALL_PATH=$PWD" >> env
+  #     fi
 
   lighting:
-    after: [libgpiod, test-blink, connectedhomeip, zap]
+    after: [libgpiod, test-blink, connectedhomeip]
     plugin: nil
     source: .
-    build-environment:
-      - ZAP_ENV: ../../zap/build/env
+    # build-environment:
+    #   - ZAP_ENV: ../../zap/build/env
     override-build: |
 
       cp $CRAFT_STAGE/gpiod.h app/linux/include 
