@@ -181,7 +181,7 @@ parts:
       gn gen out/build
       ninja -C out/build
 
-      ls out/build
+      # List shared objects
       ldd out/build/chip-gpio-app
       
       mkdir -p $CRAFT_PART_INSTALL/bin
