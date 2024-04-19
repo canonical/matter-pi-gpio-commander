@@ -144,7 +144,7 @@ parts:
       cp $CRAFT_STAGE/gpiod.h app/linux/include 
 
       # Setup ZAP paths; installed in the corresponding part
-      test -f $ZAP_ENV && source $ZAP_ENV
+      #test -f $ZAP_ENV && source $ZAP_ENV
       
       # Change to SDK's directory to allow caching of the activation
       # regardless of this part's pull and build status.
