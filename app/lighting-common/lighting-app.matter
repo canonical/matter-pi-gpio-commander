@@ -1,5 +1,5 @@
 // This file contains partial code copied from:
-// https://github.com/project-chip/connectedhomeip/blob/8a4dffc5d/examples/lighting-app/lighting-common/lighting-app.matter
+// https://github.com/project-chip/connectedhomeip/blob/v1.3.0.0/examples/lighting-app/lighting-common/lighting-app.matter
 
 // This IDL was generated automatically by ZAP.
 // It is for view/code review purposes only.
