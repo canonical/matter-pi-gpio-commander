@@ -1,6 +1,6 @@
 /*
  * This file is copied from:
- * https://github.com/project-chip/connectedhomeip/blob/8a4dffc5d/examples/lighting-app/linux/include/CHIPProjectAppConfig.h 
+ * https://github.com/project-chip/connectedhomeip/blob/v1.3.0.0/examples/lighting-app/linux/include/CHIPProjectAppConfig.h 
  */
 
 /*

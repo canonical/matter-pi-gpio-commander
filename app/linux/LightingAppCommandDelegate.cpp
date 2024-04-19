@@ -1,6 +1,6 @@
 /*
  * This file is copied from:
- * https://github.com/project-chip/connectedhomeip/blob/8a4dffc5d/examples/lighting-app/linux/LightingAppCommandDelegate.cpp
+ * https://github.com/project-chip/connectedhomeip/blob/v1.3.0.0/examples/lighting-app/linux/LightingAppCommandDelegate.cpp
  */
 
 /*
@@ -29,10 +29,7 @@
 #include <app/clusters/switch-server/switch-server.h>
 #include <app/server/Server.h>
 #include <app/util/att-storage.h>
-#include <app/util/attribute-storage.h>
 #include <platform/PlatformManager.h>
-
-#include <string>
 
 using namespace chip;
 using namespace chip::app;
