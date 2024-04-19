@@ -177,7 +177,7 @@ parts:
       # See https://github.com/project-chip/connectedhomeip/issues/32925
       cp -vr $CRAFT_PART_BUILD examples/gpio-app
 
-      cd examples/app/linux
+      cd examples/gpio-app/linux
       gn gen out/build
       ninja -C out/build
 
