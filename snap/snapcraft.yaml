@@ -175,9 +175,9 @@ parts:
 
       # Add the App to be build from CHIP SDK's build system
       # See https://github.com/project-chip/connectedhomeip/issues/32925
-      cp -vr $CRAFT_PART_BUILD examples/gpio-app
+      cp -vr $CRAFT_PART_BUILD examples/chip-gpio-app
 
-      cd examples/gpio-app/linux
+      cd examples/chip-gpio-app/linux
       gn gen out/build
       ninja -C out/build
 
