@@ -134,7 +134,7 @@ parts:
       fi
 
   lighting:
-    after: [libgpiod, test-blink, connectedhomeip]
+    after: [libgpiod, test-blink, connectedhomeip, zap]
     plugin: nil
     source: app
     build-environment:
