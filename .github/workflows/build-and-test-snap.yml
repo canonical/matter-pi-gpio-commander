@@ -9,16 +9,41 @@ on:
   workflow_dispatch:
 
 jobs:
+  build-arm64:
+    runs-on: ubuntu-latest
+    steps:
 
-  build-and-test-arm64:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Build snap for arm64
+        uses: diddlesnaps/snapcraft-multiarch-action@v1
+        id: build
+        with:
+          architecture: arm64
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: matter-pi-gpio-commander_${{ github.run_number}}_arm64.snap
+          path: ${{ steps.build.outputs.snap }}
+
+  test-arm64:
     runs-on: Ubuntu_ARM64_4C_16G_01
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-   
-      - name: Build Snap
-        uses: snapcore/action-build@v1
-        id: snapcraft
+
+      - name: Download snap artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: matter-pi-gpio-commander_${{ github.run_number}}_arm64.snap
+          path: .
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -31,7 +56,7 @@ jobs:
         env:
           MOCK_GPIO: true
           SKIP_TEARDOWN_REMOVAL: true
-          LOCAL_SERVICE_SNAP: ../${{ steps.snapcraft.outputs.snap }}
+          LOCAL_SERVICE_SNAP: ../matter-pi-gpio-commander_${{ github.run_number}}_arm64.snap
         run: go test -failfast -p 1 -timeout 20m -v
 
       - name: Upload snap logs
