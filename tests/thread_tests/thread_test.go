@@ -12,9 +12,9 @@ import (
 func TestAllClustersAppThread(t *testing.T) {
 	setup(t)
 
-	remote_setup(t)
+	trimmedActiveDataset := getActiveDataset(t)
 
-	trimmedActiveDataset := remote_getActiveDataset(t)
+	remote_setup(t)
 
 	t.Run("Commission", func(t *testing.T) {
 		stdout, _, _ := utils.Exec(t, "sudo chip-tool pairing code-thread 110 hex:"+trimmedActiveDataset+" 34970112332 2>&1")
@@ -30,7 +30,7 @@ func TestAllClustersAppThread(t *testing.T) {
 			os.WriteFile("chip-tool-thread-onoff.log", []byte(stdout), 0644),
 		)
 
-		remote_waitForLogMessage(t, "matter-all-clusters-app", "CHIP:ZCL: Toggle ep1 on/off", start)
+		remote_waitForLogMessage(t, matterGPIOSnap, "CHIP:ZCL: Toggle ep1 on/off", start)
 	})
 
 }

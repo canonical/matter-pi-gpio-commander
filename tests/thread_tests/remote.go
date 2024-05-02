@@ -16,9 +16,12 @@ var (
 	remotePassword       = ""
 	remoteHost           = ""
 	remoteInfraInterface = ""
+	remoteSnapPath       = ""
 
 	SSHClient *ssh.Client
 )
+
+const matterGPIOSnap = "matter-pi-gpio-commander"
 
 func remote_setup(t *testing.T) {
 	remote_loadEnvVars()
@@ -27,7 +30,7 @@ func remote_setup(t *testing.T) {
 
 	remote_deployOTBRAgent(t)
 
-	remote_deployChipTool(t)
+	remote_deployGPIOCommander(t)
 }
 
 func remote_loadEnvVars() {
@@ -36,6 +39,7 @@ func remote_loadEnvVars() {
 		remotePasswordEnv       = "REMOTE_PASSWORD"
 		remoteHostEnv           = "REMOTE_HOST"
 		remoteInfraInterfaceEnv = "REMOTE_INFRA_IF"
+		remoteSnapPathEnv       = "REMOTE_SNAP_PATH"
 	)
 
 	if v := os.Getenv(remoteUserEnv); v != "" {
@@ -52,6 +56,10 @@ func remote_loadEnvVars() {
 
 	if v := os.Getenv(remoteInfraInterfaceEnv); v != "" {
 		remoteInfraInterface = v
+	}
+
+	if v := os.Getenv(remoteSnapPathEnv); v != "" {
+		remoteSnapPath = v
 	}
 }
 
@@ -95,6 +103,7 @@ func remote_deployOTBRAgent(t *testing.T) {
 		"sudo snap remove --purge openthread-border-router",
 		"sudo snap install openthread-border-router --edge",
 		"sudo snap set openthread-border-router infra-if='" + remoteInfraInterface + "'",
+		"sudo snap set openthread-border-router webgui-port=50500",
 		// "sudo snap connect openthread-border-router:avahi-control",
 		"sudo snap connect openthread-border-router:firewall-control",
 		"sudo snap connect openthread-border-router:raw-usb",
@@ -118,32 +127,36 @@ func remote_deployOTBRAgent(t *testing.T) {
 	t.Log("OTBR on remote device is ready")
 }
 
-func remote_deployChipTool(t *testing.T) {
+func remote_deployGPIOCommander(t *testing.T) {
 
 	t.Cleanup(func() {
-		remote_exec(t, "sudo snap remove --purge chip-tool")
+		remote_exec(t, "sudo snap remove --purge "+matterGPIOSnap)
 	})
 
+	installCommand := fmt.Sprintf("sudo snap install %s --edge", matterGPIOSnap)
+	if remoteSnapPath != "" {
+		installCommand = fmt.Sprintf("sudo snap install --dangerous %s", remoteSnapPath)
+	}
+
+	start := time.Now().UTC()
+
 	commands := []string{
-		"sudo apt-get -y install avahi-daemon bluez",
-		"sudo snap remove --purge chip-tool",
-		"sudo snap install chip-tool --edge",
-		"sudo snap connect chip-tool:avahi-observe",
-		"sudo snap connect chip-tool:bluez",
-		"sudo snap connect chip-tool:process-control",
+		"sudo snap remove --purge " + matterGPIOSnap,
+		installCommand,
+		"sudo snap set" + matterGPIOSnap + "args=\"--thread\"",
+		// "sudo snap connect openthread-border-router:avahi-control",
+		"sudo snap connect " + matterGPIOSnap + ":avahi-control",
+		"sudo snap connect " + matterGPIOSnap + ":otbr-dbus-wpan0 " + otbrSnap + ":dbus-wpan0",
+		// "sudo snap connect openthread-border-router:bluetooth-control",
+		// "sudo snap connect openthread-border-router:bluez",
+		"sudo snap start " + matterGPIOSnap,
 	}
 	for _, cmd := range commands {
 		remote_exec(t, cmd)
 	}
 
-	t.Log("Chip Tool is ready")
-}
-
-func remote_getActiveDataset(t *testing.T) string {
-	activeDataset := remote_exec(t, "sudo openthread-border-router.ot-ctl dataset active -x | awk '{print $NF}' | grep --invert-match \"Done\"")
-	trimmedActiveDataset := strings.TrimSpace(activeDataset)
-
-	return trimmedActiveDataset
+	remote_waitForLogMessage(t, matterGPIOSnap, "CHIP:IN: TransportMgr initialized", start)
+	t.Log("Matter PI GPIO Commander on remote device is ready")
 }
 
 func remote_exec(t *testing.T, command string) string {

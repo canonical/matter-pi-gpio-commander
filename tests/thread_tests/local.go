@@ -14,13 +14,10 @@ import (
 const (
 	otbrSnap = "openthread-border-router"
 	OTCTL    = otbrSnap + ".ot-ctl"
-
-	snapMatterPiGPIO = "matter-pi-gpio-commander"
-	chipToolSnap     = "chip-tool"
 )
 
 func setup(t *testing.T) {
-	installGPIOCommander(t)
+	installChipTool(t)
 
 	const (
 		defaultInfraInterfaceValue = "wlan0"
@@ -30,7 +27,6 @@ func setup(t *testing.T) {
 
 	// Clean
 	utils.SnapRemove(t, otbrSnap)
-	utils.SnapRemove(t, snapMatterPiGPIO)
 
 	// Install OTBR
 	utils.SnapInstallFromStore(t, otbrSnap, utils.ServiceChannel)
@@ -56,44 +52,47 @@ func setup(t *testing.T) {
 	start := time.Now()
 	utils.SnapStart(t, otbrSnap)
 	waitForLogMessage(t, otbrSnap, "Start Thread Border Agent: OK", start)
+
+	// Form Thread network
+	utils.Exec(t, "sudo "+OTCTL+" dataset init new")
+	utils.Exec(t, "sudo "+OTCTL+" dataset commit active")
+	utils.Exec(t, "sudo "+OTCTL+" ifconfig up")
+	utils.Exec(t, "sudo "+OTCTL+" thread start")
+	utils.WaitForLogMessage(t, otbrSnap, "Thread Network", start)
 }
 
-func GetActiveDataset(t *testing.T) string {
+func getActiveDataset(t *testing.T) string {
 	activeDataset, _, _ := utils.Exec(t, "sudo "+OTCTL+" dataset active -x | awk '{print $NF}' | grep --invert-match \"Done\"")
 	trimmedActiveDataset := strings.TrimSpace(activeDataset)
 
 	return trimmedActiveDataset
 }
 
-func installGPIOCommander(t *testing.T) {
-	const snapMatterPiGPIO = "matter-pi-gpio-commander"
+func installChipTool(t *testing.T) {
+	const chipToolSnap = "chip-tool"
 
 	// clean
-	utils.SnapRemove(t, snapMatterPiGPIO)
+	utils.SnapRemove(t, chipToolSnap)
 
 	if utils.LocalServiceSnap() {
 		require.NoError(t,
 			utils.SnapInstallFromFile(nil, utils.LocalServiceSnapPath),
 		)
-		require.NoError(t,
-			utils.SnapConnect(nil, snapMatterPiGPIO+":custom-gpio", snapMatterPiGPIO+":custom-gpio-dev"),
-		)
 	} else {
 		require.NoError(t,
-			utils.SnapInstallFromStore(nil, snapMatterPiGPIO, utils.ServiceChannel),
+			utils.SnapInstallFromStore(nil, chipToolSnap, utils.ServiceChannel),
 		)
 	}
 	t.Cleanup(func() {
-		utils.SnapRemove(t, snapMatterPiGPIO)
+		utils.SnapRemove(t, chipToolSnap)
 	})
 
 	// connect interfaces
-	utils.SnapConnect(t, snapMatterPiGPIO+":avahi-control", "")
-	// utils.SnapConnect(t, snapMatterPiGPIO+":bluez", "")
-	utils.SnapConnect(t, snapMatterPiGPIO+":otbr-dbus-wpan0", otbrSnap+":dbus-wpan0")
-	utils.SnapSet(t, snapMatterPiGPIO, "args", "--thread")
-	utils.SnapSet(t, snapMatterPiGPIO, "gpio", "16")
+	utils.SnapConnect(t, chipToolSnap+":avahi-observe", "")
+	utils.SnapConnect(t, chipToolSnap+":bluez", "")
+	utils.SnapConnect(t, chipToolSnap+":process-control", "")
 
+	return
 }
 
 // TODO: update the library function to print the tail before failing:
