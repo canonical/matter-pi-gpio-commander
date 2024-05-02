@@ -99,11 +99,10 @@ func remote_deployOTBRAgent(t *testing.T) {
 	start := time.Now().UTC()
 
 	commands := []string{
-		// Comission OTBR
 		"sudo snap remove --purge openthread-border-router",
 		"sudo snap install openthread-border-router --edge",
 		"sudo snap set openthread-border-router infra-if='" + remoteInfraInterface + "'",
-		"sudo snap set openthread-border-router webgui-port=50500",
+		"sudo snap set openthread-border-router webgui-port=5000",
 		// "sudo snap connect openthread-border-router:avahi-control",
 		"sudo snap connect openthread-border-router:firewall-control",
 		"sudo snap connect openthread-border-router:raw-usb",
@@ -111,19 +110,12 @@ func remote_deployOTBRAgent(t *testing.T) {
 		// "sudo snap connect openthread-border-router:bluetooth-control",
 		// "sudo snap connect openthread-border-router:bluez",
 		"sudo snap start openthread-border-router",
-
-		// Form Thread network
-		"sudo openthread-border-router dataset init new",
-		"sudo openthread-border-router dataset commit active",
-		"sudo openthread-border-router ifconfig up",
-		"sudo openthread-border-router thread start",
 	}
 	for _, cmd := range commands {
 		remote_exec(t, cmd)
 	}
 
 	remote_waitForLogMessage(t, otbrSnap, "Start Thread Border Agent: OK", start)
-	remote_waitForLogMessage(t, otbrSnap, "Thread Network", start)
 	t.Log("OTBR on remote device is ready")
 }
 
@@ -134,8 +126,10 @@ func remote_deployGPIOCommander(t *testing.T) {
 	})
 
 	installCommand := fmt.Sprintf("sudo snap install %s --edge", matterGPIOSnap)
+	extraInterface := ""
 	if remoteSnapPath != "" {
 		installCommand = fmt.Sprintf("sudo snap install --dangerous %s", remoteSnapPath)
+		extraInterface = "sudo snap connect " + matterGPIOSnap + ":custom-gpio " + matterGPIOSnap + ":custom-gpio-dev"
 	}
 
 	start := time.Now().UTC()
@@ -143,12 +137,11 @@ func remote_deployGPIOCommander(t *testing.T) {
 	commands := []string{
 		"sudo snap remove --purge " + matterGPIOSnap,
 		installCommand,
+		extraInterface,
 		"sudo snap set" + matterGPIOSnap + "args=\"--thread\"",
-		// "sudo snap connect openthread-border-router:avahi-control",
+		"sudo snap set" + matterGPIOSnap + "gpio=\"16\"",
 		"sudo snap connect " + matterGPIOSnap + ":avahi-control",
 		"sudo snap connect " + matterGPIOSnap + ":otbr-dbus-wpan0 " + otbrSnap + ":dbus-wpan0",
-		// "sudo snap connect openthread-border-router:bluetooth-control",
-		// "sudo snap connect openthread-border-router:bluez",
 		"sudo snap start " + matterGPIOSnap,
 	}
 	for _, cmd := range commands {
