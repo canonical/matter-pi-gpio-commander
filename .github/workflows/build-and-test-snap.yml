@@ -57,8 +57,8 @@ jobs:
         env:
           MOCK_GPIO: true
           SKIP_TEARDOWN_REMOVAL: true
-          LOCAL_SERVICE_SNAP: ../matter-pi-gpio-commander_2.0.0_arm64.snap
-        run: ls -la && go test -failfast -p 1 -timeout 20m -v
+          LOCAL_SERVICE_SNAP: ../matter-pi-gpio-commander_*_arm64.snap
+        run: go test -failfast -p 1 -timeout 20m -v
 
       - name: Upload snap logs
         if: always()
