@@ -10,22 +10,31 @@ on:
 
 jobs:
   build-arm64:
-    runs-on: ubuntu-latest
+    # ARM64 runner
+    runs-on: Ubuntu_ARM64_4C_16G_01
+
+    # runs-on: ubuntu-latest
     steps:
 
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
-      - name: Build snap for arm64
-        uses: diddlesnaps/snapcraft-multiarch-action@v1
+      # Native Build on ARM64
+      - name: Build Snap
+        uses: snapcore/action-build@v1
         id: build
-        with:
-          architecture: arm64
+
+      # QEMU Build on ARM64
+      # - name: Setup QEMU
+      #   uses: docker/setup-qemu-action@v3
+      #   with:
+      #     platforms: arm64
+
+      # - name: Build snap for arm64
+      #   uses: diddlesnaps/snapcraft-multiarch-action@v1
+      #   id: build
+      #   with:
+      #     architecture: arm64
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
