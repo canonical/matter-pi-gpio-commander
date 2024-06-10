@@ -17,6 +17,8 @@ var (
 	remoteHost           = ""
 	remoteInfraInterface = ""
 	remoteSnapPath       = ""
+	remoteGPIOChip       = ""
+	remoteGPIOLine       = ""
 
 	SSHClient *ssh.Client
 )
@@ -40,6 +42,8 @@ func remote_loadEnvVars() {
 		remoteHostEnv           = "REMOTE_HOST"
 		remoteInfraInterfaceEnv = "REMOTE_INFRA_IF"
 		remoteSnapPathEnv       = "REMOTE_SNAP_PATH"
+		remoteGPIOChipEnv       = "REMOTE_GPIO_CHIP"
+		remoteGPIOLineEnv       = "REMOTE_GPIO_LINE"
 	)
 
 	if v := os.Getenv(remoteUserEnv); v != "" {
@@ -61,6 +65,19 @@ func remote_loadEnvVars() {
 	if v := os.Getenv(remoteSnapPathEnv); v != "" {
 		remoteSnapPath = v
 	}
+
+	if v := os.Getenv(remoteGPIOChipEnv); v != "" {
+		remoteGPIOChip = v
+	} else {
+		remoteGPIOChip = "0"
+	}
+
+	if v := os.Getenv(remoteGPIOLineEnv); v != "" {
+		remoteGPIOLine = v
+	} else {
+		remoteGPIOLine = "16"
+	}
+
 }
 
 func connectSSH(t *testing.T) {
@@ -129,20 +146,21 @@ func remote_deployGPIOCommander(t *testing.T) {
 	extraInterface := ""
 	if remoteSnapPath != "" {
 		installCommand = fmt.Sprintf("sudo snap install --dangerous %s", remoteSnapPath)
-		extraInterface = "sudo snap connect " + matterGPIOSnap + ":custom-gpio " + matterGPIOSnap + ":custom-gpio-dev"
+		extraInterface = fmt.Sprintf("sudo snap connect %s:custom-gpio %s:custom-gpio-dev", matterGPIOSnap, matterGPIOSnap)
 	}
 
 	start := time.Now().UTC()
 
 	commands := []string{
-		"sudo snap remove --purge " + matterGPIOSnap,
+		fmt.Sprintf("sudo snap remove --purge %s ", matterGPIOSnap),
 		installCommand,
 		extraInterface,
-		"sudo snap set" + matterGPIOSnap + "args=\"--thread\"",
-		"sudo snap set" + matterGPIOSnap + "gpio=\"16\"",
-		"sudo snap connect " + matterGPIOSnap + ":avahi-control",
-		"sudo snap connect " + matterGPIOSnap + ":otbr-dbus-wpan0 " + otbrSnap + ":dbus-wpan0",
-		"sudo snap start " + matterGPIOSnap,
+		fmt.Sprintf("sudo snap set %s args=\"--thread\"", matterGPIOSnap),
+		fmt.Sprintf("sudo snap set %s gpiochip=\"%s\"", matterGPIOSnap, remoteGPIOChip),
+		fmt.Sprintf("sudo snap set %s gpio=\"%s\"", matterGPIOSnap, remoteGPIOLine),
+		fmt.Sprintf("sudo snap connect %s:avahi-control", matterGPIOSnap),
+		fmt.Sprintf("sudo snap connect %s:otbr-dbus-wpan0 %s:dbus-wpan0", matterGPIOSnap, otbrSnap),
+		fmt.Sprintf("sudo snap start %s", matterGPIOSnap),
 	}
 	for _, cmd := range commands {
 		remote_exec(t, cmd)
