@@ -23,8 +23,6 @@ var (
 	SSHClient *ssh.Client
 )
 
-const matterGPIOSnap = "matter-pi-gpio-commander"
-
 func remote_setup(t *testing.T) {
 	remote_loadEnvVars()
 
@@ -134,35 +132,35 @@ func remote_deployOTBRAgent(t *testing.T) {
 func remote_deployGPIOCommander(t *testing.T) {
 
 	t.Cleanup(func() {
-		remote_exec(t, "sudo snap remove --purge "+matterGPIOSnap)
+		remote_exec(t, "sudo snap remove --purge matter-pi-gpio-commander")
 	})
 
-	installCommand := fmt.Sprintf("sudo snap install %s --edge", matterGPIOSnap)
+	installCommand := "sudo snap install matter-pi-gpio-commander --edge"
 	extraInterface := ""
 	if remoteSnapPath != "" {
 		installCommand = fmt.Sprintf("sudo snap install --dangerous %s", remoteSnapPath)
-		extraInterface = fmt.Sprintf("sudo snap connect %s:custom-gpio %s:custom-gpio-dev", matterGPIOSnap, matterGPIOSnap)
+		extraInterface = "sudo snap connect matter-pi-gpio-commander:custom-gpio matter-pi-gpio-commander:custom-gpio-dev"
 	}
 
 	start := time.Now().UTC()
 
 	commands := []string{
-		fmt.Sprintf("sudo snap remove --purge %s ", matterGPIOSnap),
+		"sudo snap remove --purge matter-pi-gpio-commander",
 		installCommand,
 		extraInterface,
-		fmt.Sprintf("sudo snap set %s args=\"--thread\"", matterGPIOSnap),
-		fmt.Sprintf("sudo snap set %s gpiochip=\"%s\"", matterGPIOSnap, remoteGPIOChip),
-		fmt.Sprintf("sudo snap set %s gpio=\"%s\"", matterGPIOSnap, remoteGPIOLine),
-		fmt.Sprintf("sudo snap connect %s:avahi-control", matterGPIOSnap),
-		fmt.Sprintf("sudo snap connect %s:otbr-dbus-wpan0 %s:dbus-wpan0", matterGPIOSnap, otbrSnap),
-		fmt.Sprintf("sudo snap start %s", matterGPIOSnap),
+		"sudo snap set matter-pi-gpio-commander args=\"--thread\"",
+		fmt.Sprintf("sudo snap set matter-pi-gpio-commander gpiochip=\"%s\"", remoteGPIOChip),
+		fmt.Sprintf("sudo snap set matter-pi-gpio-commander gpio=\"%s\"", remoteGPIOLine),
+		"sudo snap connect matter-pi-gpio-commander:avahi-control",
+		"sudo snap connect matter-pi-gpio-commander:otbr-dbus-wpan0 openthread-border-router:dbus-wpan0",
+		"sudo snap start matter-pi-gpio-commander",
 	}
 	for _, cmd := range commands {
 		out := remote_exec(t, cmd)
 		t.Log(out)
 	}
 
-	remote_waitForLogMessage(t, matterGPIOSnap, "CHIP:IN: TransportMgr initialized", start)
+	remote_waitForLogMessage(t, "matter-pi-gpio-commander", "CHIP:IN: TransportMgr initialized", start)
 	t.Log("Matter PI GPIO Commander on remote device is ready")
 }
 

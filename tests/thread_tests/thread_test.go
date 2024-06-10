@@ -30,7 +30,7 @@ func TestThread(t *testing.T) {
 			os.WriteFile("chip-tool-thread-onoff.log", []byte(stdout), 0644),
 		)
 
-		remote_waitForLogMessage(t, matterGPIOSnap, "CHIP:ZCL: Toggle ep1 on/off", start)
+		remote_waitForLogMessage(t, "matter-pi-gpio-commander", "CHIP:ZCL: Toggle ep1 on/off", start)
 	})
 
 	t.Cleanup(func() {
