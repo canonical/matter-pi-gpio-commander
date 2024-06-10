@@ -48,7 +48,8 @@ how to build and flash an RCP firmware.
 * `REMOTE_HOST` - The IP address of the second machine **(B)**.
 * `REMOTE_INFRA_IF` - The network interface name for the second machine **(B)**.
 * `LOCAL_INFRA_IF` - The network interface name for the first machine **(A)**.
-* `REMOTE_SNAP_PATH` - The path to the snap file on the second machine **(B)**.
+* `REMOTE_SNAP_PATH` - The path to the snap file on the second machine **(B)**,
+if doesn't specified, snap if fetched from store.
 * `REMOTE_GPIO_CHIP` - The number for the GPIO chip to be used on **(B)**.
 * `REMOTE_GPIO_LINE` - The number for the GPIO line to be used on **(B)**.
 
