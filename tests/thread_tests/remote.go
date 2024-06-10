@@ -163,7 +163,8 @@ func remote_deployGPIOCommander(t *testing.T) {
 		fmt.Sprintf("sudo snap start %s", matterGPIOSnap),
 	}
 	for _, cmd := range commands {
-		remote_exec(t, cmd)
+		out := remote_exec(t, cmd)
+		t.Log(out)
 	}
 
 	remote_waitForLogMessage(t, matterGPIOSnap, "CHIP:IN: TransportMgr initialized", start)
