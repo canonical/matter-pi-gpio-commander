@@ -21,11 +21,11 @@ to know how to build and flash a RCP firmware.
 * `REMOTE_INFRA_IF` - The network interface name for the second machine**(B)**.
 * `LOCAL_INFRA_IF` - The netowrk interface name for the first machine**(A)**.
 * `REMOTE_SNAP_PATH` - The path to the snap file on the second machine**(B)**.
-* `REMOTE_GPIO_CHIP` - **The number** for the **GPIO chip** to be used on (B), defaults to `0` which is `/dev/gpiochip0` if not defined.
-* `REMOTE_GPIO_LINE` - **The number** for the **GPIO line** to be used on (B), defaults to `16` if not defined.
+* `REMOTE_GPIO_CHIP` - **The number** for the **GPIO chip** to be used on **(B)**.
+* `REMOTE_GPIO_LINE` - **The number** for the **GPIO line** to be used on **(B)**.
 
 Example:
 
 ```bash
-REMOTE_SNAP_PATH="~/matter-pi-gpio-commander_2.0.0_arm64.snap" LOCAL_INFRA_IF="eno1" REMOTE_INFRA_IF="eth0" REMOTE_USER="ubuntu" REMOTE_PASSWORD="abcdef" REMOTE_HOST="192.168.178.95" go test -v -failfast -count 1 ./thread_tests
+REMOTE_SNAP_PATH="~/matter-pi-gpio-commander_2.0.0_arm64.snap" REMOTE_GPIO_CHIP="0" REMOTE_GPIO_LINE="16" LOCAL_INFRA_IF="eno1" REMOTE_INFRA_IF="eth0" REMOTE_USER="ubuntu" REMOTE_PASSWORD="abcdef" REMOTE_HOST="192.168.178.95" go test -v -failfast -count 1 ./thread_tests
 ```

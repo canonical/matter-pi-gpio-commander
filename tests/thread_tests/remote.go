@@ -68,16 +68,11 @@ func remote_loadEnvVars() {
 
 	if v := os.Getenv(remoteGPIOChipEnv); v != "" {
 		remoteGPIOChip = v
-	} else {
-		remoteGPIOChip = "0"
 	}
 
 	if v := os.Getenv(remoteGPIOLineEnv); v != "" {
 		remoteGPIOLine = v
-	} else {
-		remoteGPIOLine = "16"
 	}
-
 }
 
 func connectSSH(t *testing.T) {
