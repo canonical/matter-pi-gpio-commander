@@ -33,4 +33,7 @@ func TestAllClustersAppThread(t *testing.T) {
 		remote_waitForLogMessage(t, matterGPIOSnap, "CHIP:ZCL: Toggle ep1 on/off", start)
 	})
 
+	t.Cleanup(func() {
+		utils.Exec(t, "sudo chip-tool onoff off 110 1 2>&1")
+	})
 }
