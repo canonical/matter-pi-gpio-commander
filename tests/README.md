@@ -64,7 +64,7 @@ REMOTE_INFRA_IF="eth0" \
 REMOTE_USER="ubuntu" \
 REMOTE_PASSWORD="abcdef" \
 REMOTE_HOST="192.168.178.95" \
-go test -v -failfast -count 0 ./thread_tests
+go test -v -failfast -count 1 ./thread_tests
 ```
 
 [openthread-border-router-snap-guide-url]: https://github.com/canonical/openthread-border-router-snap/wiki/Setup-OpenThread-Border-Router-with-nRF52840-Dongle#build-and-flash-rcp-firmware-on-nrf52480-dongle
