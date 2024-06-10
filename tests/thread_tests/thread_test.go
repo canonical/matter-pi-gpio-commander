@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAllClustersAppThread(t *testing.T) {
+func TestThread(t *testing.T) {
 	setup(t)
 
 	trimmedActiveDataset := getActiveDataset(t)
