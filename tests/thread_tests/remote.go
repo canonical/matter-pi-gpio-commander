@@ -114,7 +114,7 @@ func remote_deployOTBRAgent(t *testing.T) {
 		"sudo snap remove --purge openthread-border-router",
 		"sudo snap install openthread-border-router --edge",
 		"sudo snap set openthread-border-router infra-if='" + remoteInfraInterface + "'",
-		"sudo snap set openthread-border-router webgui-port=5000",
+		"sudo snap set openthread-border-router webgui-port=31190",
 		// "sudo snap connect openthread-border-router:avahi-control",
 		"sudo snap connect openthread-border-router:firewall-control",
 		"sudo snap connect openthread-border-router:raw-usb",
