@@ -25,3 +25,46 @@ where:
 - `-v` is to enable verbose output
 - `-failfast` makes the test stop after first failure
 - `-count 1` is to avoid Go test caching for example when testing a rebuilt snap
+
+# Thread Tests
+
+These tests are meant to be run manually; therefore, they are in this separate 
+directory.
+
+## Environment Variables
+
+Some environment variables are needed to run the tests. The main reason is that
+the tests actually run on two devices, each with two Radio Co-Processors (RCPs)
+(such as the nRF52480 dongle) attached to them, and they communicate using an
+SSH connection. The machine used to run the test will be referred to as
+"first machine" or **machine (A)**, and the machine accessed by SSH will be
+referred to as "second machine" or **machine (B)**.
+
+You can refer to [this guide][openthread-border-router-snap-guide-url] to learn
+how to build and flash an RCP firmware.
+
+* `REMOTE_USER` - The user to be logged in on the second machine **(B)**.
+* `REMOTE_PASSWORD` - The password for the second machine **(B)** user.
+* `REMOTE_HOST` - The IP address of the second machine **(B)**.
+* `REMOTE_INFRA_IF` - The network interface name for the second machine **(B)**.
+* `LOCAL_INFRA_IF` - The network interface name for the first machine **(A)**.
+* `REMOTE_SNAP_PATH` - The path to the snap file on the second machine **(B)**,
+if doesn't specified, snap if fetched from store.
+* `REMOTE_GPIO_CHIP` - The number for the GPIO chip to be used on **(B)**.
+* `REMOTE_GPIO_LINE` - The number for the GPIO line to be used on **(B)**.
+
+Example:
+
+```bash
+REMOTE_SNAP_PATH="~/matter-pi-gpio-commander_2.0.0_arm64.snap" \
+REMOTE_GPIO_CHIP="0" \
+REMOTE_GPIO_LINE="16" \
+LOCAL_INFRA_IF="eno1" \
+REMOTE_INFRA_IF="eth0" \
+REMOTE_USER="ubuntu" \
+REMOTE_PASSWORD="abcdef" \
+REMOTE_HOST="192.168.178.95" \
+go test -v -failfast -count 1 ./thread_tests
+```
+
+[openthread-border-router-snap-guide-url]: https://github.com/canonical/openthread-border-router-snap/wiki/Setup-OpenThread-Border-Router-with-nRF52840-Dongle#build-and-flash-rcp-firmware-on-nrf52480-dongle
