@@ -1,6 +1,8 @@
 name: Snap Build and Test
 
 on:
+  schedule:
+    - cron: "20 2 * * 1"  # Monday morning 02:20 UTC
   push:
     branches: [ main ]
   pull_request:
@@ -8,39 +10,35 @@ on:
   # Allow manual trigger
   workflow_dispatch:
 
+env:
+  ARTIFACT_ARM64: chip-tool_${{ github.run_number}}_arm64
+
 jobs:
   build-arm64:
-    # ARM64 runner
-    runs-on: Ubuntu_ARM64_4C_16G_01
-
-    # runs-on: ubuntu-latest
+    outputs:
+      snap: ${{ steps.snapcraft.outputs.snap }}
+    runs-on: ubuntu-latest
     steps:
-
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Native Build on ARM64
-      - name: Build Snap
-        uses: snapcore/action-build@v1
-        id: build
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
 
-      # QEMU Build on ARM64
-      # - name: Setup QEMU
-      #   uses: docker/setup-qemu-action@v3
-      #   with:
-      #     platforms: arm64
-
-      # - name: Build snap for arm64
-      #   uses: diddlesnaps/snapcraft-multiarch-action@v1
-      #   id: build
-      #   with:
-      #     architecture: arm64
+      - name: Build snap
+        uses: diddlesnaps/snapcraft-multiarch-action@v1
+        id: snapcraft
+        with:
+          architecture: arm64
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: matter-pi-gpio-commander_${{ github.run_number}}_arm64.snap
-          path: ${{ steps.build.outputs.snap }}
+          name: ${{ env.ARTIFACT_ARM64 }}
+          path: ${{ steps.snapcraft.outputs.snap }}
+          if-no-files-found: error
 
   test-arm64:
     needs: build-arm64
@@ -52,7 +50,7 @@ jobs:
       - name: Download snap artifact
         uses: actions/download-artifact@v4
         with:
-          name: matter-pi-gpio-commander_${{ github.run_number}}_arm64.snap
+          name: ${{ env.ARTIFACT_ARM64 }}
           path: .
 
       - name: Setup Go
@@ -66,8 +64,9 @@ jobs:
         env:
           MOCK_GPIO: true
           SKIP_TEARDOWN_REMOVAL: true
-          LOCAL_SERVICE_SNAP: ../matter-pi-gpio-commander_*_arm64.snap
-        run: go test -failfast -p 1 -timeout 20m -v
+          LOCAL_SERVICE_SNAP: ../${{ needs.build-arm64.outputs.snap }}
+        run: |
+          go test -failfast -p 1 -timeout 20m -v
 
       - name: Upload snap logs
         if: always()
@@ -75,3 +74,21 @@ jobs:
         with:
           name: snap-logs
           path: tests/*.log
+
+  publish-arm64:
+    # Only publish if we are on the main branch
+    if: github.ref == 'refs/heads/main'
+    needs: [build-arm64, test-arm64]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download locally built snap
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_ARM64 }}
+
+      - uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+        with:
+          snap: ${{ needs.build-arm64.outputs.snap }}
+          release: latest/edge
