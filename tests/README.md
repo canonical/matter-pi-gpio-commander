@@ -3,9 +3,10 @@
 Refer below for instructions on running the snap tests.
 There are two different testing suites with different hardware requirements and inputs.
 
-## Run WiFi tests
+## Run generic tests
 
-The WiFi tests run the Matter controller along with this snap on the same machine. 
+These tests verify the main functionalities of the snap.
+The Matter application tests run the Matter controller along with this snap on the same machine. 
 The machine should be a compatible Raspberry Pi, unless the GPIO is mocked.
 
 To run the tests, you must set the following environment variables:
@@ -32,7 +33,9 @@ where:
 
 # Run Thread tests
 
-These tests have additional hardware dependencies:
+These tests verify pairing and control of the Matter application over Thread.
+
+The tests have additional hardware dependencies:
 - A nRF52480 dongle with OT RCP firmware - connected to the local machine
 - A compatible Raspberry Pi - used as the remote device
 - A second nRF52480 dongle with OT RCP firmware - connected to the Raspberry Pi
