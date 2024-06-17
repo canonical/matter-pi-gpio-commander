@@ -31,7 +31,7 @@ where:
 - `-failfast` makes the test stop after first failure
 - `-count 1` is to avoid Go test caching when repeating the unchanged tests, such when re-testing a rebuilt snap.
 
-# Run Thread tests
+## Run Thread tests
 
 These tests verify pairing and control of the Matter application over Thread.
 
