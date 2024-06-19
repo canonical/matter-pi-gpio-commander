@@ -1,7 +1,8 @@
 name: matter-pi-gpio-commander
-version: "2.0.0"
+version: "2.0"
 summary: Raspberry Pi GPIO as a Matter lighting app
 description: Refer to https://snapcraft.io/matter-pi-gpio-commander
+adopt-info: connectedhomeip
 
 # Apart from libgpiod (LGPL-2.1-or-later), everything else has Apache-2.0 license
 license: Apache-2.0 AND LGPL-2.1-or-later
@@ -114,6 +115,11 @@ parts:
       craftctl default
       # shallow clone the submodules
       scripts/checkout_submodules.py --shallow --platform linux
+
+    override-build: |
+      # add SDK's tag, fall back to the commit hash
+      CHIP_REF=$(git describe --exact-match --tags 2> /dev/null || git rev-parse --short HEAD)
+      craftctl set version=$(craftctl get version)+chip-$CHIP_REF
 
   lighting:
     after: [libgpiod, test-blink, connectedhomeip]
