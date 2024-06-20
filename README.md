@@ -5,7 +5,7 @@ This small application can turn your Raspberry Pi into a Matter lighting device.
 The GPIO output can be used switch an LED or another device via a relay.
 
 The application is based on [CHIP's Linux Lighting App](https://github.com/project-chip/connectedhomeip/tree/master/examples/lighting-app/linux) example.
-It used the [character device](https://docs.kernel.org/userspace-api/gpio/chardev.html) API to control the GPIO of Raspberry Pi.
+It uses the [character device](https://docs.kernel.org/userspace-api/gpio/chardev.html) API to control the GPIO of Raspberry Pi.
 
 ## Hardware Compatibility
 
