@@ -1,6 +1,5 @@
 # Tests
 
-Refer below for instructions on running the snap tests.
 There are two different testing suites with different hardware requirements and inputs.
 
 ## Run generic tests
