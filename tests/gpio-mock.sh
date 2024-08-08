@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 if [ "$1" = "teardown" ]; then
-	sudo rmmod gpio_mockup
-	rm -rf gpio-mockup
-	exit 0
+  sudo rmmod gpio_mockup
+  rm -rf gpio-mockup
+  exit 0
 fi
 
 mkdir gpio-mockup
@@ -16,11 +16,15 @@ sudo apt-get install -y build-essential flex bison make
 
 kernel_major_minor=$(uname -r | cut -d'.' -f1-2)
 
-echo "Kernel major minor version: $kernel_major_minor"
+echo "Kernel version: $(uname -r)"
+
+# From investigations that's what is missing between the linux headers and
+# the driver
+commit=36aa129f22
 
 # Get GPIO Mockup driver
-wget https://raw.githubusercontent.com/torvalds/linux/v$kernel_major_minor/drivers/gpio/gpio-mockup.c
-wget https://raw.githubusercontent.com/torvalds/linux/v$kernel_major_minor/drivers/gpio/gpiolib.h
+wget https://raw.githubusercontent.com/torvalds/linux/$commit/drivers/gpio/gpio-mockup.c
+wget https://raw.githubusercontent.com/torvalds/linux/$commit/drivers/gpio/gpiolib.h
 
 # Create Makefile
 echo "
@@ -30,8 +34,7 @@ all:
 	make -C /lib/modules/\$(KVERSION)/build M=\$(PWD) modules
 clean:
 	make -C /lib/modules/\$(KVERSION)/build M=\$(PWD) clean
-" > Makefile
-
+" >Makefile
 
 make -j$(nproc)
 
@@ -42,3 +45,4 @@ gpio_mock_chip=$(ls /dev/gpiochip* | sort -n | head -n 1)
 echo "GPIO Mockup chip: $gpio_mock_chip"
 
 cd ..
+
