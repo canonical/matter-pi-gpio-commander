@@ -14,17 +14,11 @@ sudo apt-get update
 sudo apt-get install -y linux-headers-$(uname -r)
 sudo apt-get install -y build-essential flex bison make
 
-kernel_major_minor=$(uname -r | cut -d'.' -f1-2)
-
 echo "Kernel version: $(uname -r)"
 
-# From investigations that's what is missing between the linux headers and
-# the driver
-commit=36aa129f22
-
 # Get GPIO Mockup driver
-wget https://raw.githubusercontent.com/torvalds/linux/$commit/drivers/gpio/gpio-mockup.c
-wget https://raw.githubusercontent.com/torvalds/linux/$commit/drivers/gpio/gpiolib.h
+wget https://git.launchpad.net/~canonical-kernel/ubuntu/+source/linux-azure/+git/jammy/plain/drivers/gpio/gpio-mockup.c
+wget https://git.launchpad.net/~canonical-kernel/ubuntu/+source/linux-azure/+git/jammy/plain/drivers/gpio/gpiolib.h
 
 # Create Makefile
 echo "
@@ -45,4 +39,3 @@ gpio_mock_chip=$(ls /dev/gpiochip* | sort -n | head -n 1)
 echo "GPIO Mockup chip: $gpio_mock_chip"
 
 cd ..
-
