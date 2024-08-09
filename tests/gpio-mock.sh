@@ -16,9 +16,11 @@ sudo apt-get install -y build-essential flex bison make
 
 echo "Kernel version: $(uname -r)"
 
+. /etc/os-release
+
 # Get GPIO Mockup driver
-wget https://git.launchpad.net/~canonical-kernel/ubuntu/+source/linux-azure/+git/jammy/plain/drivers/gpio/gpio-mockup.c
-wget https://git.launchpad.net/~canonical-kernel/ubuntu/+source/linux-azure/+git/jammy/plain/drivers/gpio/gpiolib.h
+wget https://git.launchpad.net/~canonical-kernel/ubuntu/+source/linux-azure/+git/$UBUNTU_CODENAME/plain/drivers/gpio/gpio-mockup.c
+wget https://git.launchpad.net/~canonical-kernel/ubuntu/+source/linux-azure/+git/$UBUNTU_CODENAME/plain/drivers/gpio/gpiolib.h
 
 # Create Makefile
 echo "
