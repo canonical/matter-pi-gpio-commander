@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 if [ "$1" = "teardown" ]; then
-	sudo rmmod gpio_mockup
-	rm -rf gpio-mockup
-	exit 0
+  sudo rmmod gpio_mockup
+  rm -rf gpio-mockup
+  exit 0
 fi
 
 mkdir gpio-mockup
@@ -14,13 +14,13 @@ sudo apt-get update
 sudo apt-get install -y linux-headers-$(uname -r)
 sudo apt-get install -y build-essential flex bison make
 
-kernel_major_minor=$(uname -r | cut -d'.' -f1-2)
+echo "Kernel version: $(uname -r)"
 
-echo "Kernel major minor version: $kernel_major_minor"
+. /etc/os-release
 
 # Get GPIO Mockup driver
-wget https://raw.githubusercontent.com/torvalds/linux/v$kernel_major_minor/drivers/gpio/gpio-mockup.c
-wget https://raw.githubusercontent.com/torvalds/linux/v$kernel_major_minor/drivers/gpio/gpiolib.h
+wget https://git.launchpad.net/~canonical-kernel/ubuntu/+source/linux-azure/+git/$UBUNTU_CODENAME/plain/drivers/gpio/gpio-mockup.c
+wget https://git.launchpad.net/~canonical-kernel/ubuntu/+source/linux-azure/+git/$UBUNTU_CODENAME/plain/drivers/gpio/gpiolib.h
 
 # Create Makefile
 echo "
@@ -30,8 +30,7 @@ all:
 	make -C /lib/modules/\$(KVERSION)/build M=\$(PWD) modules
 clean:
 	make -C /lib/modules/\$(KVERSION)/build M=\$(PWD) clean
-" > Makefile
-
+" >Makefile
 
 make -j$(nproc)
 
