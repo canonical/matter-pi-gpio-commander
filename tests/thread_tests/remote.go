@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/canonical/matter-snap-testing/utils"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -216,4 +217,10 @@ func remote_waitForLogMessage(t *testing.T, snap string, expectedLog string, sta
 	t.Logf("Time out: reached max %d retries.", maxRetry)
 	t.Log(remote_exec(t, "journalctl --no-pager --lines=10 --unit=snap.openthread-border-router.otbr-agent --priority=notice"))
 	t.FailNow()
+}
+
+func remoteDumpLogs(t *testing.T, label string, start time.Time) error {
+	command := fmt.Sprintf("sudo journalctl --utc --since \"%s\" --no-pager | grep \"%s\"|| true", start.UTC().Format("2006-01-02 15:04:05"), label)
+	logs := remote_exec(t, command)
+	return utils.WriteLogFile(t, label, logs)
 }

@@ -99,8 +99,9 @@ func setupGPIOMock(snapPath string) (string, error) {
 	// check if gpio mock is enabled AND the service is running locally
 	// Run gpio mockup script
 	_, stderr, err := utils.Exec(nil, "./gpio-mock.sh")
+	//_ = utils.WriteLogFile(nil, "gpio-mock-stdout", stdout) // Requires a testing.T object
 	if err != nil {
-		return snapPath, fmt.Errorf("Failed to run gpio mockup script %s: %s", stderr, err)
+		return snapPath, fmt.Errorf("failed to run gpio mockup script %s: %s", stderr, err)
 	}
 
 	// authorize gpio mock
@@ -200,6 +201,7 @@ func TestBlinkOperation(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	t.Cleanup(func() {
 		cancel()
+		// No need to dump matter-pi-gpio-commander logs, as the service was not used.
 	})
 
 	// Schedule a kill after 10 seconds
