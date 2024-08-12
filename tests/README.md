@@ -10,10 +10,10 @@ The machine should be a compatible Raspberry Pi, unless the GPIO is mocked.
 
 To run the tests, you must set the following environment variables:
 
-- `SERVICE_CHANNEL`: The channel from which the snap will be downloaded. The default value is `latest/edge`. This is ignored when using a locally built snap.
-- `LOCAL_SERVICE_SNAP`: Path to the local service snap to be tested instead of downloading from a channel.
-- `SKIP_TEARDOWN_REMOVAL`: Skip the removal of snaps during teardown (useful when running on CI machines). The default value is `false`.
-- `MOCK_GPIO`: Use gpio-mock to test the application instead of a physical gpiochip. The default value is `false`. The GPIO mocking logic works by modifying a local snap; the path to which must be set in `LOCAL_SERVICE_SNAP`.
+- `SNAP_CHANNEL`: The channel from which the snap will be downloaded. The default value is `latest/edge`. This is ignored when using a locally built snap.
+- `SNAP_PATH`: Path to the local snap to be tested instead of downloading from the store.
+- `TEARDOWN`: Remove snaps after tests. Useful to disable when running on CI machines. The default value is `true`.
+- `MOCK_GPIO`: Use gpio-mock to test the application instead of a physical gpiochip. The default value is `false`. The GPIO mocking logic works by modifying a local snap; the path to which must be set in `SNAP_PATH`.
 - `GPIO_CHIP`: The GPIO chip number; accepted values are `0` (for legacy Raspberry Pis) or `4` for the Raspberry Pi 5. This is ignored when mocking GPIO.
 - `GPIO_LINE`: This is the line offset to be used to test the selected gpiochip. The number of available lines can be checked with the `gpiodetect` and `gpioinfo` commands from the Debian package `gpiod`. This is ignored when mocking GPIO.
 
