@@ -189,15 +189,26 @@ func setupGPIO() error {
 }
 
 func TestBlinkOperation(t *testing.T) {
-	// test blink operation
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	/*
+		`test-blink` runs until it is stopped.
+		1. We use a context with a timeout to stop it after 5 seconds.
+		2. This does not work in a GitHub runner, so we also do a force kill after 10 seconds.
+		   See issue https://github.com/canonical/matter-snap-testing/issues/17
+	*/
 
+	// Create context with 5 second timeout. Clear its resources when test is cleaned up.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	t.Cleanup(func() {
 		cancel()
-		// Force kill the process see issue https://github.com/canonical/matter-snap-testing/issues/17
-		utils.Exec(t, `sudo pkill -f "test-blink"`)
 	})
 
+	// Schedule a kill after 10 seconds
+	go func() {
+		time.Sleep(10 * time.Second)
+		utils.Exec(t, `sudo pkill -f "test-blink"`)
+	}()
+
+	// Start blink, capturing stdout until it exits. Exit happens on the context timeout, or as fallback when it is killed.
 	stdout, _, _ := utils.ExecContextVerbose(t, ctx, "sudo "+snapMatterPiGPIO+".test-blink")
 	assert.NoError(t, utils.WriteLogFile(t, snapMatterPiGPIO, stdout))
 
