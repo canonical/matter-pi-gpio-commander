@@ -232,9 +232,11 @@ func TestWifiMatterCommander(t *testing.T) {
 	t.Cleanup(func() {
 		utils.SnapStop(t, snapMatterPiGPIO)
 
-		// Remove snaps, ignore errors during removal
-		utils.SnapRemove(nil, chipToolSnap)
-		// snapMatterPiGPIO is not removed here, as that is handled by the teardown function
+		if env.Teardown() {
+			// Remove snaps, ignore errors during removal
+			utils.SnapRemove(nil, chipToolSnap)
+			// snapMatterPiGPIO is not removed here, as that is handled by the teardown function
+		}
 
 		utils.SnapDumpLogs(t, start, snapMatterPiGPIO)
 	})
