@@ -1,10 +1,12 @@
 module matter-pi-gpio-commander-tests
 
-go 1.21.6
+go 1.22.1
+
+toolchain go1.22.6
 
 require (
-	github.com/canonical/matter-snap-testing v1.0.0-beta.1
-	github.com/stretchr/testify v1.8.4
+	github.com/canonical/matter-snap-testing v1.0.0-beta.6
+	github.com/stretchr/testify v1.9.0
 	golang.org/x/crypto v0.22.0
 )
 
