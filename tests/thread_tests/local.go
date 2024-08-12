@@ -29,7 +29,7 @@ func setup(t *testing.T) {
 	utils.SnapRemove(t, otbrSnap)
 
 	// Install OTBR
-	utils.SnapInstallFromStore(t, otbrSnap, utils.ServiceChannel)
+	utils.SnapInstallFromStore(t, otbrSnap, "latest/beta")
 	t.Cleanup(func() {
 		utils.SnapRemove(t, otbrSnap)
 	})
@@ -74,15 +74,10 @@ func installChipTool(t *testing.T) {
 	// clean
 	utils.SnapRemove(t, chipToolSnap)
 
-	if utils.LocalServiceSnap() {
-		require.NoError(t,
-			utils.SnapInstallFromFile(nil, utils.LocalServiceSnapPath),
-		)
-	} else {
-		require.NoError(t,
-			utils.SnapInstallFromStore(nil, chipToolSnap, utils.ServiceChannel),
-		)
-	}
+	require.NoError(t,
+		utils.SnapInstallFromStore(nil, chipToolSnap, "latest/beta"),
+	)
+
 	t.Cleanup(func() {
 		utils.SnapRemove(t, chipToolSnap)
 	})

@@ -110,7 +110,7 @@ func remote_deployOTBRAgent(t *testing.T) {
 
 	commands := []string{
 		"sudo snap remove --purge openthread-border-router",
-		"sudo snap install openthread-border-router --edge",
+		"sudo snap install openthread-border-router --channel=latest/beta",
 		"sudo snap set openthread-border-router infra-if='" + remoteInfraInterface + "'",
 		"sudo snap set openthread-border-router webgui-port=31190",
 		// "sudo snap connect openthread-border-router:avahi-control",
@@ -135,7 +135,8 @@ func remote_deployGPIOCommander(t *testing.T) {
 		remote_exec(t, "sudo snap remove --purge matter-pi-gpio-commander")
 	})
 
-	installCommand := "sudo snap install matter-pi-gpio-commander --edge"
+	// TODO: this should be using a local snap
+	installCommand := "sudo snap install matter-pi-gpio-commander --channel=latest/edge"
 	extraInterface := ""
 	if remoteSnapPath != "" {
 		installCommand = fmt.Sprintf("sudo snap install --dangerous %s", remoteSnapPath)

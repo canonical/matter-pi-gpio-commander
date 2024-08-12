@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/canonical/matter-snap-testing/env"
 	"github.com/canonical/matter-snap-testing/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -40,7 +41,6 @@ func TestMain(m *testing.M) {
 }
 
 func setup() (teardown func(), err error) {
-	var start = time.Now()
 	var newSnapPath string
 
 	log.Println("[CLEAN]")
@@ -51,29 +51,28 @@ func setup() (teardown func(), err error) {
 
 	teardown = func() {
 		log.Println("[TEARDOWN]")
-		utils.SnapDumpLogs(nil, start, snapMatterPiGPIO)
 
 		utils.Exec(nil, "rm "+newSnapPath)
 
-		log.Println("Removing installed snap:", !utils.SkipTeardownRemoval)
-		if !utils.SkipTeardownRemoval {
+		log.Println("Removing installed snap:", env.Teardown())
+		if env.Teardown() {
 			utils.SnapRemove(nil, snapMatterPiGPIO)
 			utils.Exec(nil, "./gpio-mock.sh teardown")
 		}
 	}
 
 	// setup gpio mock
-	if newSnapPath, err = setupGPIOMock(utils.LocalServiceSnapPath); err != nil {
+	if newSnapPath, err = setupGPIOMock(env.SnapPath()); err != nil {
 		teardown()
 		return
 	}
 
 	// install matter-pi-gpio-commander
-	if utils.LocalServiceSnap() {
+	if env.SnapPath() != "" {
 		err = utils.SnapInstallFromFile(nil, newSnapPath)
 		utils.SnapConnect(nil, snapMatterPiGPIO+":custom-gpio", snapMatterPiGPIO+":custom-gpio-dev")
 	} else {
-		err = utils.SnapInstallFromStore(nil, snapMatterPiGPIO, utils.ServiceChannel)
+		err = utils.SnapInstallFromStore(nil, snapMatterPiGPIO, env.SnapChannel())
 	}
 
 	utils.SnapConnect(nil, snapMatterPiGPIO+":avahi-control", "")
@@ -93,7 +92,7 @@ func setup() (teardown func(), err error) {
 }
 
 func setupGPIOMock(snapPath string) (string, error) {
-	if !useGPIOMock() || !utils.LocalServiceSnap() {
+	if !useGPIOMock() || (env.SnapPath() == "") {
 		return snapPath, nil
 	}
 
@@ -170,7 +169,7 @@ func authorizeGpioMock(path string) (string, error) {
 func setupGPIO() error {
 	var err error
 	// The GPIO_MOCKUP takes precedence over the specific GPIO_CHIP and GPIO_LINE
-	if useGPIOMock() && utils.LocalServiceSnap() {
+	if useGPIOMock() && (env.SnapPath() != "") {
 		utils.SnapSet(nil, snapMatterPiGPIO, "gpiochip-validation", "false")
 
 		gpioChip, err = getMockGPIO()
@@ -193,14 +192,14 @@ func TestBlinkOperation(t *testing.T) {
 	// test blink operation
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
-	// Force kill the process see issue https://github.com/canonical/matter-snap-testing/issues/17
-	go func() {
-		time.Sleep(10 * time.Second)
+	t.Cleanup(func() {
+		cancel()
+		// Force kill the process see issue https://github.com/canonical/matter-snap-testing/issues/17
 		utils.Exec(t, `sudo pkill -f "test-blink"`)
-	}()
+	})
 
 	stdout, _, _ := utils.ExecContextVerbose(t, ctx, "sudo "+snapMatterPiGPIO+".test-blink")
-	t.Cleanup(cancel)
+	assert.NoError(t, utils.WriteLogFile(t, snapMatterPiGPIO, stdout))
 
 	// Assert GPIO value
 	assert.Contains(t, stdout, fmt.Sprintf("GPIO: %s", gpioLine))
@@ -215,22 +214,33 @@ func TestWifiMatterCommander(t *testing.T) {
 	var stdout, stderr string
 	var err error
 
+	start := time.Now()
+
+	t.Cleanup(func() {
+		utils.SnapStop(t, snapMatterPiGPIO)
+
+		// Remove snaps, ignore errors during removal
+		utils.SnapRemove(nil, chipToolSnap)
+		// snapMatterPiGPIO is not removed here, as that is handled by the teardown function
+
+		utils.SnapDumpLogs(t, start, snapMatterPiGPIO)
+	})
+
 	// install chip-tool
-	err = utils.SnapInstallFromStore(t, chipToolSnap, utils.ServiceChannel)
+	err = utils.SnapInstallFromStore(t, chipToolSnap, "latest/beta")
 	if err != nil {
 		t.Fatalf("Failed to install chip-tool: %s", err)
 	}
-	t.Cleanup(func() { utils.SnapRemove(t, chipToolSnap) })
 
 	// chip-tool interfaces
 	utils.SnapConnect(nil, chipToolSnap+":avahi-observe", "")
 
 	utils.SnapStart(t, snapMatterPiGPIO)
-	t.Cleanup(func() { utils.SnapStop(t, snapMatterPiGPIO) })
 
 	// commission
 	t.Run("Commission", func(t *testing.T) {
 		stdout, stderr, err = utils.Exec(t, "sudo chip-tool pairing onnetwork 110 20202021")
+		assert.NoError(t, utils.WriteLogFile(t, chipToolSnap, stdout))
 		assert.Contains(t, stdout, "CHIP:IN: TransportMgr initialized")
 		t.Logf("stderr: %s", stderr)
 	})
@@ -239,6 +249,8 @@ func TestWifiMatterCommander(t *testing.T) {
 		for i := 0; i < 4; i++ {
 			stdout, stderr, err = utils.Exec(t, "sudo chip-tool onoff toggle 110 1")
 		}
+		assert.NoError(t, utils.WriteLogFile(t, chipToolSnap, stdout))
 		assert.Contains(t, stdout, "Success status report received. Session was established")
 	})
+
 }
