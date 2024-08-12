@@ -15,10 +15,12 @@ var (
 	remoteUser           = ""
 	remotePassword       = ""
 	remoteHost           = ""
-	remoteInfraInterface = ""
-	remoteSnapPath       = ""
-	remoteGPIOChip       = ""
-	remoteGPIOLine       = ""
+	remoteInfraInterface = defaultInfraInterfaceValue
+	remoteRadioUrl       = defaultRadioUrl
+
+	remoteSnapPath = ""
+	remoteGPIOChip = ""
+	remoteGPIOLine = ""
 
 	SSHClient *ssh.Client
 )
@@ -34,15 +36,6 @@ func remote_setup(t *testing.T) {
 }
 
 func remote_loadEnvVars() {
-	const (
-		remoteUserEnv           = "REMOTE_USER"
-		remotePasswordEnv       = "REMOTE_PASSWORD"
-		remoteHostEnv           = "REMOTE_HOST"
-		remoteInfraInterfaceEnv = "REMOTE_INFRA_IF"
-		remoteSnapPathEnv       = "REMOTE_SNAP_PATH"
-		remoteGPIOChipEnv       = "REMOTE_GPIO_CHIP"
-		remoteGPIOLineEnv       = "REMOTE_GPIO_LINE"
-	)
 
 	if v := os.Getenv(remoteUserEnv); v != "" {
 		remoteUser = v
@@ -58,6 +51,10 @@ func remote_loadEnvVars() {
 
 	if v := os.Getenv(remoteInfraInterfaceEnv); v != "" {
 		remoteInfraInterface = v
+	}
+
+	if v := os.Getenv(remoteRadioUrlEnv); v != "" {
+		remoteRadioUrl = v
 	}
 
 	if v := os.Getenv(remoteSnapPathEnv); v != "" {
@@ -111,7 +108,8 @@ func remote_deployOTBRAgent(t *testing.T) {
 	commands := []string{
 		"sudo snap remove --purge openthread-border-router",
 		"sudo snap install openthread-border-router --channel=latest/beta",
-		"sudo snap set openthread-border-router infra-if='" + remoteInfraInterface + "'",
+		fmt.Sprintf("sudo snap set openthread-border-router %s='%s'", infraInterfaceKey, remoteInfraInterface),
+		fmt.Sprintf("sudo snap set openthread-border-router %s='%s'", radioUrlKey, remoteRadioUrl),
 		"sudo snap set openthread-border-router webgui-port=31190",
 		// "sudo snap connect openthread-border-router:avahi-control",
 		"sudo snap connect openthread-border-router:firewall-control",
@@ -135,7 +133,6 @@ func remote_deployGPIOCommander(t *testing.T) {
 		remote_exec(t, "sudo snap remove --purge matter-pi-gpio-commander")
 	})
 
-	// TODO: this should be using a local snap
 	installCommand := "sudo snap install matter-pi-gpio-commander --channel=latest/edge"
 	extraInterface := ""
 	if remoteSnapPath != "" {

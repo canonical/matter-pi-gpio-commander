@@ -11,19 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	otbrSnap = "openthread-border-router"
-	OTCTL    = otbrSnap + ".ot-ctl"
-)
-
 func setup(t *testing.T) {
 	installChipTool(t)
-
-	const (
-		defaultInfraInterfaceValue = "wlan0"
-		infraInterfaceKey          = "infra-if"
-		localInfraInterfaceEnv     = "LOCAL_INFRA_IF"
-	)
 
 	// Clean
 	utils.SnapRemove(t, otbrSnap)
@@ -46,6 +35,14 @@ func setup(t *testing.T) {
 		utils.SnapSet(nil, otbrSnap, infraInterfaceKey, infraInterfaceValue)
 	} else {
 		utils.SnapSet(nil, otbrSnap, infraInterfaceKey, defaultInfraInterfaceValue)
+	}
+
+	// Set radio url
+	if v := os.Getenv(localRadioUrlEnv); v != "" {
+		radioUrlValue := v
+		utils.SnapSet(nil, otbrSnap, radioUrlKey, radioUrlValue)
+	} else {
+		utils.SnapSet(nil, otbrSnap, radioUrlKey, defaultRadioUrl)
 	}
 
 	// Start OTBR

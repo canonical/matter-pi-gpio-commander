@@ -44,18 +44,22 @@ You can refer to [this guide][openthread-border-router-snap-guide-url] to learn 
 The tests will configure the remote device over SSH: an open SSH server with password-login on the Raspberry Pi is required.
 
 Additional environment variables needed for these tests:
-* For the remote machine:
-  * `REMOTE_HOST`: IP address or hostname
-  * `REMOTE_USER`: username for SSH login
-  * `REMOTE_PASSWORD`: password for the user
-  * `REMOTE_INFRA_IF`: network interface name used for the main networking interface on the remote machine (usually the Wifi or Ethernet interface)
-  * `REMOTE_GPIO_CHIP`: GPIO chip number
-  * `REMOTE_GPIO_LINE`: GPIO line number
-  * `REMOTE_SNAP_PATH`: path to the snap file. If doesn't specified, snap if fetched from store.
-* For the local machine:
-  * `LOCAL_INFRA_IF`: network interface name used for the main networking interface on the local machine (usually the Wifi or Ethernet interface)
 
-Example, for testing a locally built snap, available on the remote machine at `~/matter-pi-gpio-commander_2.0.0_arm64.snap`:
+| Variable name    | Required | Default value                   | Description                       |
+|------------------|----------|---------------------------------|-----------------------------------|
+| LOCAL_INFRA_IF   | no       | wlan0                           | Local backhaul network interface  |
+| LOCAL_RADIO_URL  | no       | spinel+hdlc+uart:///dev/ttyACM0 | Local RCP URL                     |
+| REMOTE_HOST      | yes      |                                 | Remote device IP or hostname      |
+| REMOTE_USER      | yes      |                                 | Remote device SSH username        |
+| REMOTE_PASSWORD  | yes      |                                 | Remote device SSH password        |
+| REMOTE_INFRA_IF  | no       | wlan0                           | Remote backhaul network interface |
+| REMOTE_RADIO_URL | no       | spinel+hdlc+uart:///dev/ttyACM0 | Remote RCP URL                    |
+| REMOTE_GPIO_CHIP | yes      |                                 | GPIO chip number                  |
+| REMOTE_GPIO_LINE | yes      |                                 | GPIO line number                  |
+| REMOTE_SNAP_PATH | no       | latest/edge                     | Path to the snap file             |
+
+Example, for testing a locally built snap, available on the remote machine at
+`~/matter-pi-gpio-commander_2.0.0_arm64.snap`:
 
 ```bash
 REMOTE_HOST="192.168.178.95" \
