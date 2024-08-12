@@ -92,14 +92,14 @@ func setup() (teardown func(), err error) {
 }
 
 func setupGPIOMock(snapPath string) (string, error) {
+	// Check if gpio mock is enabled and a local snap is provided
 	if !useGPIOMock() || (env.SnapPath() == "") {
 		return snapPath, nil
 	}
 
-	// check if gpio mock is enabled AND the service is running locally
 	// Run gpio mockup script
-	_, stderr, err := utils.Exec(nil, "./gpio-mock.sh")
-	//_ = utils.WriteLogFile(nil, "gpio-mock-stdout", stdout) // Requires a testing.T object
+	stdout, stderr, err := utils.Exec(nil, "./gpio-mock.sh")
+	_ = utils.WriteLogFile(nil, "gpio-mock", stdout)
 	if err != nil {
 		return snapPath, fmt.Errorf("failed to run gpio mockup script %s: %s", stderr, err)
 	}
