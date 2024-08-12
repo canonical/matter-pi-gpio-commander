@@ -1,6 +1,8 @@
 name: Snap Build and Test
 
 on:
+  schedule:
+    - cron: "20 2 * * 1"  # Monday morning 02:20 UTC
   push:
     branches: [ main ]
   pull_request:
@@ -8,17 +10,48 @@ on:
   # Allow manual trigger
   workflow_dispatch:
 
-jobs:
+env:
+  ARTIFACT_ARM64: chip-tool_${{ github.run_number}}_arm64
 
-  build-and-test-arm64:
+jobs:
+  build-arm64:
+    outputs:
+      snap: ${{ steps.snapcraft.outputs.snap }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Build snap
+        uses: diddlesnaps/snapcraft-multiarch-action@v1
+        id: snapcraft
+        with:
+          architecture: arm64
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_ARM64 }}
+          path: ${{ steps.snapcraft.outputs.snap }}
+          if-no-files-found: error
+
+  test-arm64:
+    needs: build-arm64
     runs-on: Ubuntu_ARM64_4C_16G_01
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-   
-      - name: Build Snap
-        uses: snapcore/action-build@v1
-        id: snapcraft
+
+      - name: Download snap artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_ARM64 }}
+          path: .
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -31,8 +64,9 @@ jobs:
         env:
           MOCK_GPIO: true
           SKIP_TEARDOWN_REMOVAL: true
-          LOCAL_SERVICE_SNAP: ../${{ steps.snapcraft.outputs.snap }}
-        run: go test -failfast -p 1 -timeout 20m -v
+          LOCAL_SERVICE_SNAP: ${{ needs.build-arm64.outputs.snap }}
+        run: |
+          go test -failfast -p 1 -timeout 20m -v
 
       - name: Upload snap logs
         if: always()
@@ -41,9 +75,20 @@ jobs:
           name: snap-logs
           path: tests/*.log
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+  publish-arm64:
+    # Only publish if we are on the main branch
+    if: github.ref == 'refs/heads/main'
+    needs: [build-arm64, test-arm64]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download locally built snap
+        uses: actions/download-artifact@v4
         with:
-          name: matter-pi-gpio-commander_${{ github.run_number}}_arm64.snap
-          path: ${{ steps.snapcraft.outputs.snap }}
-  
+          name: ${{ env.ARTIFACT_ARM64 }}
+
+      - uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+        with:
+          snap: ${{ needs.build-arm64.outputs.snap }}
+          release: latest/edge
