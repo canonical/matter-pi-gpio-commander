@@ -26,23 +26,21 @@ func setup(t *testing.T) {
 	// Connect interfaces
 	snapInterfaces := []string{"avahi-control", "firewall-control", "raw-usb", "network-control", "bluetooth-control", "bluez"}
 	for _, interfaceSlot := range snapInterfaces {
-		utils.SnapConnect(nil, otbrSnap+":"+interfaceSlot, "")
+		utils.SnapConnect(t, otbrSnap+":"+interfaceSlot, "")
 	}
 
 	// Set infra interface
-	if v := os.Getenv(localInfraInterfaceEnv); v != "" {
-		infraInterfaceValue := v
-		utils.SnapSet(nil, otbrSnap, infraInterfaceKey, infraInterfaceValue)
+	if infraInterfaceValue := os.Getenv(localInfraInterfaceEnv); infraInterfaceValue != "" {
+		utils.SnapSet(t, otbrSnap, infraInterfaceKey, infraInterfaceValue)
 	} else {
-		utils.SnapSet(nil, otbrSnap, infraInterfaceKey, defaultInfraInterfaceValue)
+		utils.SnapSet(t, otbrSnap, infraInterfaceKey, defaultInfraInterfaceValue)
 	}
 
 	// Set radio url
-	if v := os.Getenv(localRadioUrlEnv); v != "" {
-		radioUrlValue := v
-		utils.SnapSet(nil, otbrSnap, radioUrlKey, radioUrlValue)
+	if radioUrlValue := os.Getenv(localRadioUrlEnv); radioUrlValue != "" {
+		utils.SnapSet(t, otbrSnap, radioUrlKey, radioUrlValue)
 	} else {
-		utils.SnapSet(nil, otbrSnap, radioUrlKey, defaultRadioUrl)
+		utils.SnapSet(t, otbrSnap, radioUrlKey, defaultRadioUrl)
 	}
 
 	// Start OTBR
@@ -72,7 +70,7 @@ func installChipTool(t *testing.T) {
 	utils.SnapRemove(t, chipToolSnap)
 
 	require.NoError(t,
-		utils.SnapInstallFromStore(nil, chipToolSnap, "latest/beta"),
+		utils.SnapInstallFromStore(t, chipToolSnap, "latest/beta"),
 	)
 
 	t.Cleanup(func() {

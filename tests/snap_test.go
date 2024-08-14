@@ -93,15 +93,15 @@ func setup() (teardown func(), err error) {
 
 func setupGPIOMock(snapPath string) (string, error) {
 	// Check if gpio mock is enabled and a local snap is provided
-	if !useGPIOMock() || (env.SnapPath() == "") {
+	if !useGPIOMock() || env.SnapPath() == "" {
 		return snapPath, nil
 	}
 
 	// Run gpio mockup script
-	stdout, stderr, err := utils.Exec(nil, "./gpio-mock.sh")
+	stdout, _, err := utils.Exec(nil, "./gpio-mock.sh 2>&1")
 	_ = utils.WriteLogFile(nil, "gpio-mock", stdout)
 	if err != nil {
-		return snapPath, fmt.Errorf("failed to run gpio mockup script %s: %s", stderr, err)
+		return snapPath, fmt.Errorf("failed to run gpio mockup script: %s", err)
 	}
 
 	// authorize gpio mock
@@ -170,7 +170,7 @@ func authorizeGpioMock(path string) (string, error) {
 func setupGPIO() error {
 	var err error
 	// The GPIO_MOCKUP takes precedence over the specific GPIO_CHIP and GPIO_LINE
-	if useGPIOMock() && (env.SnapPath() != "") {
+	if useGPIOMock() && env.SnapPath() != "" {
 		utils.SnapSet(nil, snapMatterPiGPIO, "gpiochip-validation", "false")
 
 		gpioChip, err = getMockGPIO()
@@ -189,83 +189,82 @@ func setupGPIO() error {
 	return nil
 }
 
+/*
+TestBlinkOperation runs the test-blink app in the snap.
+The log output is checked for the correctly configured GPIO Chip and GPIO Line,
+as well as the existence of the ON and OFF log messages.
+*/
 func TestBlinkOperation(t *testing.T) {
 	/*
 		`test-blink` runs until it is stopped.
-		1. We use a context with a timeout to stop it after 5 seconds.
-		2. This does not work in a GitHub runner, so we also do a force kill after 10 seconds.
-		   See issue https://github.com/canonical/matter-snap-testing/issues/17
+		We use a context with a timeout to manually stop it after a few seconds.
 	*/
-
-	// Create context with 5 second timeout. Clear its resources when test is cleaned up.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	t.Cleanup(func() {
-		cancel()
-		// No need to dump matter-pi-gpio-commander logs, as the service was not used.
-	})
+	t.Cleanup(cancel)
 
-	// Schedule a kill after 10 seconds
+	/*
+		Context timeout does not stop the process in a GitHub runner.
+		We have to manually kill it. We do that shortly after the context should have timed out.
+		See issue https://github.com/canonical/matter-snap-testing/issues/17
+	*/
 	go func() {
 		time.Sleep(10 * time.Second)
 		utils.Exec(t, `sudo pkill -f "test-blink"`)
 	}()
 
-	// Start blink, capturing stdout until it exits. Exit happens on the context timeout, or as fallback when it is killed.
-	stdout, _, _ := utils.ExecContextVerbose(t, ctx, "sudo "+snapMatterPiGPIO+".test-blink")
+	stdout, _, err := utils.ExecContextVerbose(t, ctx, "sudo "+snapMatterPiGPIO+".test-blink")
 	assert.NoError(t, utils.WriteLogFile(t, snapMatterPiGPIO, stdout))
+	assert.NoError(t, err)
 
-	// Assert GPIO value
 	assert.Contains(t, stdout, fmt.Sprintf("GPIO: %s", gpioLine))
-	// Assert GPIOCHIP value
 	assert.Contains(t, stdout, fmt.Sprintf("GPIOCHIP: %s", gpioChip))
-	// Assert log messages
 	assert.Contains(t, stdout, "On")
 	assert.Contains(t, stdout, "Off")
 }
 
 func TestWifiMatterCommander(t *testing.T) {
-	var stdout, stderr string
+	var stdout string
 	var err error
 
 	start := time.Now()
-
 	t.Cleanup(func() {
-		utils.SnapStop(t, snapMatterPiGPIO)
-
-		if env.Teardown() {
-			// Remove snaps, ignore errors during removal
-			utils.SnapRemove(nil, chipToolSnap)
-			// snapMatterPiGPIO is not removed here, as that is handled by the teardown function
-		}
-
 		utils.SnapDumpLogs(t, start, snapMatterPiGPIO)
 	})
 
 	// install chip-tool
 	err = utils.SnapInstallFromStore(t, chipToolSnap, "latest/beta")
+	t.Cleanup(func() {
+		utils.SnapRemove(t, chipToolSnap)
+	})
 	if err != nil {
 		t.Fatalf("Failed to install chip-tool: %s", err)
 	}
 
 	// chip-tool interfaces
-	utils.SnapConnect(nil, chipToolSnap+":avahi-observe", "")
+	utils.SnapConnect(t, chipToolSnap+":avahi-observe", "")
 
 	utils.SnapStart(t, snapMatterPiGPIO)
+	t.Cleanup(func() {
+		utils.SnapStop(t, snapMatterPiGPIO)
+	})
 
 	// commission
 	t.Run("Commission", func(t *testing.T) {
-		stdout, stderr, err = utils.Exec(t, "sudo chip-tool pairing onnetwork 110 20202021")
+		stdout, _, err = utils.Exec(t, "sudo chip-tool pairing onnetwork 110 20202021 2>&1")
 		assert.NoError(t, utils.WriteLogFile(t, chipToolSnap, stdout))
+		assert.NoError(t, err)
 		assert.Contains(t, stdout, "CHIP:IN: TransportMgr initialized")
-		t.Logf("stderr: %s", stderr)
 	})
 
 	t.Run("Control", func(t *testing.T) {
+		stdoutCombined := ""
 		for i := 0; i < 4; i++ {
-			stdout, stderr, err = utils.Exec(t, "sudo chip-tool onoff toggle 110 1")
+			stdout, _, err = utils.Exec(t, "sudo chip-tool onoff toggle 110 1 2>&1")
+			stdoutCombined += stdout
+			// TODO: We should be saving the logs (append to file) before exiting on error
+			assert.NoError(t, err)
 		}
-		assert.NoError(t, utils.WriteLogFile(t, chipToolSnap, stdout))
-		assert.Contains(t, stdout, "Success status report received. Session was established")
+		assert.NoError(t, utils.WriteLogFile(t, chipToolSnap, stdoutCombined))
+		assert.Contains(t, stdoutCombined, "Success status report received. Session was established")
 	})
-
 }
