@@ -30,8 +30,8 @@ jobs:
         working-directory: tests
         env:
           MOCK_GPIO: true
-          SKIP_TEARDOWN_REMOVAL: true
-          LOCAL_SERVICE_SNAP: ../${{ steps.snapcraft.outputs.snap }}
+          TEARDOWN: false
+          SNAP_PATH: ../${{ steps.snapcraft.outputs.snap }}
         run: go test -failfast -p 1 -timeout 20m -v
 
       - name: Upload snap logs
@@ -39,7 +39,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: snap-logs
-          path: tests/*.log
+          path: tests/logs/*.log
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

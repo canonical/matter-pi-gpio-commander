@@ -11,25 +11,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	otbrSnap = "openthread-border-router"
-	OTCTL    = otbrSnap + ".ot-ctl"
-)
-
 func setup(t *testing.T) {
 	installChipTool(t)
-
-	const (
-		defaultInfraInterfaceValue = "wlan0"
-		infraInterfaceKey          = "infra-if"
-		localInfraInterfaceEnv     = "LOCAL_INFRA_IF"
-	)
 
 	// Clean
 	utils.SnapRemove(t, otbrSnap)
 
 	// Install OTBR
-	utils.SnapInstallFromStore(t, otbrSnap, utils.ServiceChannel)
+	utils.SnapInstallFromStore(t, otbrSnap, "latest/beta")
 	t.Cleanup(func() {
 		utils.SnapRemove(t, otbrSnap)
 	})
@@ -37,15 +26,21 @@ func setup(t *testing.T) {
 	// Connect interfaces
 	snapInterfaces := []string{"avahi-control", "firewall-control", "raw-usb", "network-control", "bluetooth-control", "bluez"}
 	for _, interfaceSlot := range snapInterfaces {
-		utils.SnapConnect(nil, otbrSnap+":"+interfaceSlot, "")
+		utils.SnapConnect(t, otbrSnap+":"+interfaceSlot, "")
 	}
 
 	// Set infra interface
-	if v := os.Getenv(localInfraInterfaceEnv); v != "" {
-		infraInterfaceValue := v
-		utils.SnapSet(nil, otbrSnap, infraInterfaceKey, infraInterfaceValue)
+	if infraInterfaceValue := os.Getenv(localInfraInterfaceEnv); infraInterfaceValue != "" {
+		utils.SnapSet(t, otbrSnap, infraInterfaceKey, infraInterfaceValue)
 	} else {
-		utils.SnapSet(nil, otbrSnap, infraInterfaceKey, defaultInfraInterfaceValue)
+		utils.SnapSet(t, otbrSnap, infraInterfaceKey, defaultInfraInterfaceValue)
+	}
+
+	// Set radio url
+	if radioUrlValue := os.Getenv(localRadioUrlEnv); radioUrlValue != "" {
+		utils.SnapSet(t, otbrSnap, radioUrlKey, radioUrlValue)
+	} else {
+		utils.SnapSet(t, otbrSnap, radioUrlKey, defaultRadioUrl)
 	}
 
 	// Start OTBR
@@ -74,15 +69,10 @@ func installChipTool(t *testing.T) {
 	// clean
 	utils.SnapRemove(t, chipToolSnap)
 
-	if utils.LocalServiceSnap() {
-		require.NoError(t,
-			utils.SnapInstallFromFile(nil, utils.LocalServiceSnapPath),
-		)
-	} else {
-		require.NoError(t,
-			utils.SnapInstallFromStore(nil, chipToolSnap, utils.ServiceChannel),
-		)
-	}
+	require.NoError(t,
+		utils.SnapInstallFromStore(t, chipToolSnap, "latest/beta"),
+	)
+
 	t.Cleanup(func() {
 		utils.SnapRemove(t, chipToolSnap)
 	})
