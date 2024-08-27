@@ -93,7 +93,7 @@ jobs:
       - name: Install Snapcraft
         run: |
           sudo snap install snapcraft --classic
-          echo /snap/bin >> ${process.env.GITHUB_PATH}`  # Add `/snap/bin` to PATH for subsequent actions
+          echo /snap/bin >> ${process.env.GITHUB_PATH}  # Add `/snap/bin` to PATH for subsequent actions
         shell: bash
 
       - name: Promote Snap
