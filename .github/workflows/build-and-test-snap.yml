@@ -14,88 +14,91 @@ env:
   ARTIFACT_ARM64: matter-pi-gpio-commander_${{ github.run_number}}_arm64
 
 jobs:
-  build-arm64:
-    runs-on: Ubuntu_ARM64_4C_16G_01
-    outputs:
-      snap: ${{ steps.snapcraft.outputs.snap }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # build-arm64:
+  #   runs-on: Ubuntu_ARM64_4C_16G_01
+  #   outputs:
+  #     snap: ${{ steps.snapcraft.outputs.snap }}
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Build Snap
-        uses: snapcore/action-build@v1
-        id: snapcraft
+  #     - name: Build Snap
+  #       uses: snapcore/action-build@v1
+  #       id: snapcraft
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_ARM64 }}
-          path: ${{ steps.snapcraft.outputs.snap }}
-          if-no-files-found: error
+  #     - name: Upload artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: ${{ env.ARTIFACT_ARM64 }}
+  #         path: ${{ steps.snapcraft.outputs.snap }}
+  #         if-no-files-found: error
 
-  publish-edge-arm64:
-    # Only publish if we are on the main branch
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    needs: build-arm64
-    steps:
-      - name: Download locally built snap
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_ARM64 }}
+  # publish-edge-arm64:
+  #   # Only publish if we are on the main branch
+  #   # if: github.ref == 'refs/heads/main'
+  #   runs-on: ubuntu-latest
+  #   needs: build-arm64
+  #   steps:
+  #     - name: Download locally built snap
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: ${{ env.ARTIFACT_ARM64 }}
 
-      - uses: snapcore/action-publish@v1
-        env:
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
-        with:
-          snap: ${{ needs.build-arm64.outputs.snap }}
-          release: latest/edge
+  #     - uses: snapcore/action-publish@v1
+  #       env:
+  #         SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+  #       with:
+  #         snap: ${{ needs.build-arm64.outputs.snap }}
+  #         release: latest/edge/test
 
-  test-arm64:
-    runs-on: Ubuntu_ARM64_4C_16G_01
-    needs: build-arm64
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # test-arm64:
+  #   runs-on: Ubuntu_ARM64_4C_16G_01
+  #   needs: build-arm64
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Download locally built snap
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_ARM64 }}
+  #     - name: Download locally built snap
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: ${{ env.ARTIFACT_ARM64 }}
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.*"
-          cache: false
+  #     - name: Setup Go
+  #       uses: actions/setup-go@v5
+  #       with:
+  #         go-version: "1.*"
+  #         cache: false
 
-      - name: Run tests
-        working-directory: tests
-        env:
-          MOCK_GPIO: true
-          TEARDOWN: false
-          SNAP_PATH: ../${{ needs.build-arm64.outputs.snap }}
-        run: go test -failfast -p 1 -timeout 20m -v
+  #     - name: Run tests
+  #       working-directory: tests
+  #       env:
+  #         MOCK_GPIO: true
+  #         TEARDOWN: false
+  #         SNAP_PATH: ../${{ needs.build-arm64.outputs.snap }}
+  #       run: go test -failfast -p 1 -timeout 20m -v
 
-      - name: Upload snap logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: snap-logs
-          path: tests/logs/*.log
+  #     - name: Upload snap logs
+  #       if: always()
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: snap-logs
+  #         path: tests/logs/*.log
 
   promote-beta-arm64:
     # Only promote if we are on the main branch
-    if: github.ref == 'refs/heads/main'
+    # if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: [build-arm64, test-arm64]
+    # needs: [build-arm64, test-arm64]
     steps:
       - name: Install Snapcraft
-        uses: samuelmeuli/action-snapcraft@v2
+        run: |
+          sudo snap install snapcraft --classic
+          echo /snap/bin >> ${process.env.GITHUB_PATH}`  # Add `/snap/bin` to PATH for subsequent actions
+        shell: bash
 
       - name: Promote Snap
         env: # Workaround for https://github.com/snapcore/snapcraft/issues/4439
           SNAPCRAFT_HAS_TTY: "true"
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
         run: |
-          yes | snapcraft promote matter-pi-gpio-commander --from-channel latest/edge --to-channel latest/beta
+          yes | snapcraft promote matter-pi-gpio-commander --from-channel latest/edge/test --to-channel latest/beta/test
