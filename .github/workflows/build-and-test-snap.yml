@@ -91,9 +91,10 @@ jobs:
     # needs: [build-arm64, test-arm64]
     steps:
       - name: Install Snapcraft
+        # Install snapcraft snpa and add `/snap/bin` to PATH
         run: |
           sudo snap install snapcraft --classic
-          echo /snap/bin >> ${process.env.GITHUB_PATH}  # Add `/snap/bin` to PATH for subsequent actions
+          echo /snap/bin >> $GITHUB_PATH
         shell: bash
 
       - name: Promote Snap
