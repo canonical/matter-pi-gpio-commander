@@ -1,4 +1,4 @@
-name: Snap Build, Publish, Test, Promote
+name: Snap CI
 
 on:
   schedule:
