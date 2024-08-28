@@ -35,9 +35,11 @@ jobs:
 
   publish-edge-arm64:
     # Only publish if we are on the main branch
-    if: github.ref == 'refs/heads/main'
+    # if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: build-arm64
+    outputs:
+      revision: ${{ steps.revision.outputs.SNAP_REVISION }}
     steps:
       - name: Download locally built snap
         uses: actions/download-artifact@v4
@@ -49,7 +51,22 @@ jobs:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
         with:
           snap: ${{ needs.build-arm64.outputs.snap }}
-          release: latest/edge
+          release: latest/edge/test
+
+      - name: Install Snapcraft
+        # Install snapcraft and add it to PATH
+        run: |
+          sudo snap install snapcraft --classic
+          echo /snap/bin >> $GITHUB_PATH
+        shell: bash
+
+      - name: Capture revision number
+        id: revision
+        # https://stackoverflow.com/a/65616499
+        run: |
+          SNAP_REVISION=$(snap info matter-pi-gpio-commander | sed -nr 's/.*latest\/edge\/test.*\(([[:digit:]]*?)\).*/\1/p')
+          echo "Snap published as revision $SNAP_REVISION"
+          echo "SNAP_REVISION=$SNAP_REVISION" >> $GITHUB_OUTPUT
 
   test-arm64:
     runs-on: Ubuntu_ARM64_4C_16G_01
@@ -86,9 +103,9 @@ jobs:
 
   promote-beta-arm64:
     # Only promote if we are on the main branch
-    if: github.ref == 'refs/heads/main'
+    # if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: [build-arm64, test-arm64]
+    needs: [publish-edge-arm64, test-arm64]
     steps:
       - name: Install Snapcraft
         # Install snapcraft and add it to PATH
@@ -101,5 +118,16 @@ jobs:
         env: # Workaround for https://github.com/snapcore/snapcraft/issues/4439
           SNAPCRAFT_HAS_TTY: "true"
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+          EXPECTED_REVISION: ${{ needs.publish-edge-arm64.outputs.revision }}
         run: |
-          yes | snapcraft promote matter-pi-gpio-commander --from-channel latest/edge --to-channel latest/beta
+          if [ -z "${EXPECTED_REVISION}" ]; then
+            echo "Snap expected revision not set. Not promoting."
+            exit 1
+          fi
+          SNAP_REVISION=$(snap info matter-pi-gpio-commander | sed -nr 's/.*latest\/edge\/test.*\(([[:digit:]]*?)\).*/\1/p')
+          if [ "$SNAP_REVISION" == "$EXPECTED_REVISION" ]; then
+            yes | snapcraft promote matter-pi-gpio-commander --from-channel latest/edge/test --to-channel latest/beta/test
+          else
+            echo "Unexpected revision on latest/edge. Not promoting."
+            exit 1
+          fi
