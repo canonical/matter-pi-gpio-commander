@@ -13,16 +13,16 @@ import (
 func setup(t *testing.T) {
 	installChipTool(t)
 
-	otbrInstallTime := time.Now()
 	// Clean
 	utils.SnapRemove(t, otbrSnap)
 
 	// Install OTBR
+	otbrInstallTime := time.Now()
 	utils.SnapInstallFromStore(t, otbrSnap, "latest/beta")
 	t.Cleanup(func() {
-		utils.SnapRemove(t, otbrSnap)
 		logs := utils.SnapLogs(t, otbrInstallTime, otbrSnap)
 		utils.WriteLogFile(t, otbrSnap, logs)
+		utils.SnapRemove(t, otbrSnap)
 	})
 
 	// Connect interfaces
@@ -67,19 +67,19 @@ func getActiveDataset(t *testing.T) string {
 
 func installChipTool(t *testing.T) {
 	const chipToolSnap = "chip-tool"
-	start := time.Now()
 
 	// clean
 	utils.SnapRemove(t, chipToolSnap)
 
+	chipToolInstallTime := time.Now()
 	require.NoError(t,
 		utils.SnapInstallFromStore(t, chipToolSnap, "latest/beta"),
 	)
 
 	t.Cleanup(func() {
-		utils.SnapRemove(t, chipToolSnap)
-		logs := utils.SnapLogs(t, start, chipToolSnap)
+		logs := utils.SnapLogs(t, chipToolInstallTime, chipToolSnap)
 		utils.WriteLogFile(t, chipToolSnap, logs)
+		utils.SnapRemove(t, chipToolSnap)
 	})
 
 	// connect interfaces
