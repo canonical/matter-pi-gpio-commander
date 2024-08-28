@@ -36,7 +36,7 @@ jobs:
   publish-edge-arm64:
     # Only publish if we are on the main branch
     # if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: Ubuntu_ARM64_4C_16G_01
     needs: build-arm64
     outputs:
       revision: ${{ steps.revision.outputs.SNAP_REVISION }}
@@ -104,7 +104,7 @@ jobs:
   promote-beta-arm64:
     # Only promote if we are on the main branch
     # if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: Ubuntu_ARM64_4C_16G_01
     needs: [publish-edge-arm64, test-arm64]
     steps:
       - name: Install Snapcraft
