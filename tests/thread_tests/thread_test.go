@@ -33,6 +33,4 @@ func TestThread(t *testing.T) {
 		stdout, _, _ := utils.Exec(t, "sudo chip-tool onoff off 110 1 2>&1")
 		assert.NoError(t, utils.WriteLogFile(t, "chip-tool", stdout))
 	})
-
-	assert.NoError(t, remoteDumpLogs(t, "matter-pi-gpio-commander", start))
 }

@@ -234,6 +234,7 @@ func TestWifiMatterCommander(t *testing.T) {
 	// install chip-tool
 	err = utils.SnapInstallFromStore(t, chipToolSnap, "latest/beta")
 	t.Cleanup(func() {
+		utils.SnapDumpLogs(t, start, chipToolSnap)
 		utils.SnapRemove(t, chipToolSnap)
 	})
 	if err != nil {

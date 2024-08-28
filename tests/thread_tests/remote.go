@@ -99,12 +99,12 @@ func connectSSH(t *testing.T) {
 }
 
 func remote_deployOTBRAgent(t *testing.T) {
+	start := time.Now().UTC()
 
 	t.Cleanup(func() {
+		dumpRemoteLogs(t, "openthread-border-router", start)
 		remote_exec(t, "sudo snap remove --purge openthread-border-router")
 	})
-
-	start := time.Now().UTC()
 
 	commands := []string{
 		"sudo snap remove --purge openthread-border-router",
@@ -129,8 +129,10 @@ func remote_deployOTBRAgent(t *testing.T) {
 }
 
 func remote_deployGPIOCommander(t *testing.T) {
+	start := time.Now().UTC()
 
 	t.Cleanup(func() {
+		dumpRemoteLogs(t, "matter-pi-gpio-commander", start)
 		remote_exec(t, "sudo snap remove --purge matter-pi-gpio-commander")
 	})
 
@@ -140,8 +142,6 @@ func remote_deployGPIOCommander(t *testing.T) {
 		installCommand = fmt.Sprintf("sudo snap install --dangerous %s", remoteSnapPath)
 		extraInterface = "sudo snap connect matter-pi-gpio-commander:custom-gpio matter-pi-gpio-commander:custom-gpio-dev"
 	}
-
-	start := time.Now().UTC()
 
 	commands := []string{
 		"sudo snap remove --purge matter-pi-gpio-commander",
@@ -219,8 +219,8 @@ func remote_waitForLogMessage(t *testing.T, snap string, expectedLog string, sta
 	t.FailNow()
 }
 
-func remoteDumpLogs(t *testing.T, label string, start time.Time) error {
+func dumpRemoteLogs(t *testing.T, label string, start time.Time) error {
 	command := fmt.Sprintf("sudo journalctl --utc --since \"%s\" --no-pager | grep \"%s\"|| true", start.UTC().Format("2006-01-02 15:04:05"), label)
 	logs := remote_exec(t, command)
-	return utils.WriteLogFile(t, label, logs)
+	return utils.WriteLogFile(t, "remote-"+label, logs)
 }
