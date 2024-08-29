@@ -66,9 +66,9 @@ jobs:
         run: |
           echo "Getting info"
           SNAP_INFO=$(snap info matter-pi-gpio-commander)
-          echo $SNAP_INFO
+          echo "$SNAP_INFO"
           echo "sed-ing revision"
-          SNAP_REVISION=$(echo $SNAP_INFO | sed -nr 's/.*latest\/edge\/test.*\(([[:digit:]]*?)\).*/\1/p')
+          SNAP_REVISION=$(echo "$SNAP_INFO" | sed -nr 's/.*latest\/edge\/test.*\(([[:digit:]]*?)\).*/\1/p')
           echo "Snap published as revision $SNAP_REVISION"
           echo "SNAP_REVISION=$SNAP_REVISION" >> $GITHUB_OUTPUT
 
