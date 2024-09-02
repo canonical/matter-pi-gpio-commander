@@ -14,82 +14,45 @@ env:
   ARTIFACT_ARM64: matter-pi-gpio-commander_${{ github.run_number}}_arm64
 
 jobs:
-  build-arm64:
-    runs-on: Ubuntu_ARM64_4C_16G_01
-    outputs:
-      snap: ${{ steps.snapcraft.outputs.snap }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # build-arm64:
+  #   runs-on: Ubuntu_ARM64_4C_16G_01
+  #   outputs:
+  #     snap: ${{ steps.snapcraft.outputs.snap }}
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Build Snap
-        uses: snapcore/action-build@v1
-        id: snapcraft
+  #     - name: Build Snap
+  #       uses: snapcore/action-build@v1
+  #       id: snapcraft
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_ARM64 }}
-          path: ${{ steps.snapcraft.outputs.snap }}
-          if-no-files-found: error
+  #     - name: Upload artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: ${{ env.ARTIFACT_ARM64 }}
+  #         path: ${{ steps.snapcraft.outputs.snap }}
+  #         if-no-files-found: error
 
   publish-edge-arm64:
     # Only publish if we are on the main branch
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    needs: build-arm64
-    steps:
-      - name: Download locally built snap
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_ARM64 }}
-
-      - uses: snapcore/action-publish@v1
-        env:
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
-        with:
-          snap: ${{ needs.build-arm64.outputs.snap }}
-          release: latest/edge
-
-  test-arm64:
+    # if: github.ref == 'refs/heads/main'
     runs-on: Ubuntu_ARM64_4C_16G_01
-    needs: build-arm64
+    # needs: build-arm64
+    outputs:
+      revision: ${{ steps.revision.outputs.SNAP_REVISION }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      # - name: Download locally built snap
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: ${{ env.ARTIFACT_ARM64 }}
 
-      - name: Download locally built snap
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_ARM64 }}
+      # - uses: snapcore/action-publish@v1
+      #   env:
+      #     SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+      #   with:
+      #     snap: ${{ needs.build-arm64.outputs.snap }}
+      #     release: latest/edge/test
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.*"
-          cache: false
-
-      - name: Run tests
-        working-directory: tests
-        env:
-          MOCK_GPIO: true
-          TEARDOWN: false
-          SNAP_PATH: ../${{ needs.build-arm64.outputs.snap }}
-        run: go test -failfast -p 1 -timeout 20m -v
-
-      - name: Upload snap logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: snap-logs
-          path: tests/logs/*.log
-
-  promote-beta-arm64:
-    # Only promote if we are on the main branch
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    needs: [build-arm64, test-arm64]
-    steps:
       - name: Install Snapcraft
         # Install snapcraft and add it to PATH
         run: |
@@ -97,9 +60,78 @@ jobs:
           echo /snap/bin >> $GITHUB_PATH
         shell: bash
 
-      - name: Promote Snap
-        env: # Workaround for https://github.com/snapcore/snapcraft/issues/4439
-          SNAPCRAFT_HAS_TTY: "true"
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+      - name: Capture revision number
+        id: revision
+        # https://stackoverflow.com/a/65616499
         run: |
-          yes | snapcraft promote matter-pi-gpio-commander --from-channel latest/edge --to-channel latest/beta
+          echo "Getting info"
+          SNAP_INFO=$(snap info matter-pi-gpio-commander)
+          echo "$SNAP_INFO"
+          echo "sed-ing revision"
+          SNAP_REVISION=$(echo "$SNAP_INFO" | sed -nr 's/.*latest\/edge\/test.*\(([[:digit:]]*?)\).*/\1/p')
+          echo "Snap published as revision $SNAP_REVISION"
+          echo "SNAP_REVISION=$SNAP_REVISION" >> $GITHUB_OUTPUT
+
+  # test-arm64:
+  #   runs-on: Ubuntu_ARM64_4C_16G_01
+  #   needs: build-arm64
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+
+  #     - name: Download locally built snap
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: ${{ env.ARTIFACT_ARM64 }}
+
+  #     - name: Setup Go
+  #       uses: actions/setup-go@v5
+  #       with:
+  #         go-version: "1.*"
+  #         cache: false
+
+  #     - name: Run tests
+  #       working-directory: tests
+  #       env:
+  #         MOCK_GPIO: true
+  #         TEARDOWN: false
+  #         SNAP_PATH: ../${{ needs.build-arm64.outputs.snap }}
+  #       run: go test -failfast -p 1 -timeout 20m -v
+
+  #     - name: Upload snap logs
+  #       if: always()
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: snap-logs
+  #         path: tests/logs/*.log
+
+  # promote-beta-arm64:
+  #   # Only promote if we are on the main branch
+  #   # if: github.ref == 'refs/heads/main'
+  #   runs-on: Ubuntu_ARM64_4C_16G_01
+  #   needs: [publish-edge-arm64, test-arm64]
+  #   steps:
+  #     - name: Install Snapcraft
+  #       # Install snapcraft and add it to PATH
+  #       run: |
+  #         sudo snap install snapcraft --classic
+  #         echo /snap/bin >> $GITHUB_PATH
+  #       shell: bash
+
+  #     - name: Promote Snap
+  #       env: # Workaround for https://github.com/snapcore/snapcraft/issues/4439
+  #         SNAPCRAFT_HAS_TTY: "true"
+  #         SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+  #         EXPECTED_REVISION: ${{ needs.publish-edge-arm64.outputs.revision }}
+  #       run: |
+  #         if [ -z "${EXPECTED_REVISION}" ]; then
+  #           echo "Snap expected revision not set. Not promoting."
+  #           exit 1
+  #         fi
+  #         SNAP_REVISION=$(snap info matter-pi-gpio-commander | sed -nr 's/.*latest\/edge\/test.*\(([[:digit:]]*?)\).*/\1/p')
+  #         if [ "$SNAP_REVISION" == "$EXPECTED_REVISION" ]; then
+  #           yes | snapcraft promote matter-pi-gpio-commander --from-channel latest/edge/test --to-channel latest/beta/test
+  #         else
+  #           echo "Unexpected revision on latest/edge. Not promoting."
+  #           exit 1
+  #         fi
