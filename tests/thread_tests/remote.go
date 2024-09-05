@@ -1,6 +1,7 @@
 package thread_tests
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -168,6 +169,12 @@ func remote_exec(t *testing.T, command string) string {
 
 	t.Logf("[exec-ssh] %s", command)
 
+	// Set sudo to read the password from stdin
+	if strings.HasPrefix(command, "sudo ") {
+		command = strings.TrimPrefix(command, "sudo ")
+		command = fmt.Sprintf(`sudo -S %s`, command)
+	}
+
 	if SSHClient == nil {
 		t.Fatalf("SSH client not initialized. Please connect to remote device first")
 	}
@@ -177,25 +184,69 @@ func remote_exec(t *testing.T, command string) string {
 		t.Fatalf("Failed to create session: %v", err)
 	}
 
+	stdin, err := session.StdinPipe()
+	if err != nil {
+		t.Fatalf("Failed to create stdin pipe: %v", err)
+	}
+
 	stdout, err := session.StdoutPipe()
 	if err != nil {
 		t.Fatalf("Failed to create stdout pipe: %v", err)
 	}
 
+	stderr, err := session.StderrPipe()
+	if err != nil {
+		t.Fatalf("Failed to create stderr pipe: %v", err)
+	}
+
+	var stderrBuffer []byte
+	go remote_enterSudoPassword(stdin, stderr, &stderrBuffer)
+
 	if err := session.Start(command); err != nil {
 		t.Fatalf("Failed to start session with command '%s': %v", command, err)
 	}
 
-	output, err := io.ReadAll(stdout)
+	stdoutBuffer, err := io.ReadAll(stdout)
 	if err != nil {
 		t.Fatalf("Failed to read command output: %v", err)
 	}
 
 	if err := session.Wait(); err != nil {
-		t.Fatalf("Command '%s' failed: %v", command, err)
+		t.Fatalf("Command '%s' failed: %v\n%s", command, err, stderrBuffer)
 	}
 
-	return string(output)
+	return string(stdoutBuffer)
+}
+
+// Monitor stderr for the sudo password request, and only pipe it in when it is requested
+// https://stackoverflow.com/a/44501303
+func remote_enterSudoPassword(in io.WriteCloser, out io.Reader, output *[]byte) {
+	var (
+		line string
+		r    = bufio.NewReader(out)
+	)
+	for {
+		b, err := r.ReadByte()
+		if err != nil {
+			break
+		}
+
+		*output = append(*output, b)
+
+		if b == byte('\n') {
+			line = ""
+			continue
+		}
+
+		line += string(b)
+
+		if strings.HasPrefix(line, "[sudo] password for ") && strings.HasSuffix(line, ": ") {
+			_, err = in.Write([]byte(remotePassword + "\n"))
+			if err != nil {
+				break
+			}
+		}
+	}
 }
 
 func remote_waitForLogMessage(t *testing.T, snap string, expectedLog string, start time.Time) {
