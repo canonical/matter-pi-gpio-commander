@@ -254,7 +254,7 @@ func TestWifiMatterCommander(t *testing.T) {
 		stdout, _, err = utils.Exec(t, "sudo chip-tool pairing onnetwork 110 20202021 2>&1")
 		assert.NoError(t, utils.WriteLogFile(t, chipToolSnap, stdout))
 		assert.NoError(t, err)
-		assert.Contains(t, stdout, "CHIP:IN: TransportMgr initialized")
+		assert.Contains(t, stdout, "[IN] TransportMgr initialized")
 	})
 
 	t.Run("Control", func(t *testing.T) {
