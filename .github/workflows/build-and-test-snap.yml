@@ -15,7 +15,7 @@ env:
 
 jobs:
   build-arm64:
-    runs-on: Ubuntu_ARM64_4C_16G_01
+    runs-on: [self-hosted, ARM64, Linux]
     outputs:
       snap: ${{ steps.snapcraft.outputs.snap }}
     steps:
@@ -36,7 +36,7 @@ jobs:
   publish-edge-arm64:
     # Only publish if we are on the main branch
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, ARM64, Linux]
     needs: build-arm64
     steps:
       - name: Download locally built snap
@@ -52,7 +52,7 @@ jobs:
           release: latest/edge
 
   test-arm64:
-    runs-on: Ubuntu_ARM64_4C_16G_01
+    runs-on: [self-hosted, ARM64, Linux]
     needs: build-arm64
     steps:
       - name: Checkout code
@@ -87,7 +87,7 @@ jobs:
   promote-beta-arm64:
     # Only promote if we are on the main branch
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, ARM64, Linux]
     needs: [build-arm64, test-arm64]
     steps:
       - name: Install Snapcraft
