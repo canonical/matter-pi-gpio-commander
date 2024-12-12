@@ -108,7 +108,7 @@ parts:
     plugin: nil
     source: https://github.com/project-chip/connectedhomeip.git
     source-depth: 1
-    source-tag: master
+    source-tag: v1.4.0.0
     source-submodules: []
     override-pull: |
 
