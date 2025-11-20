@@ -20,7 +20,7 @@ jobs:
       snap: ${{ steps.snapcraft.outputs.snap }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build Snap
         uses: snapcore/action-build@v1
@@ -56,7 +56,7 @@ jobs:
     needs: build-arm64
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download locally built snap
         uses: actions/download-artifact@v5
