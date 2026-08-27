@@ -10,9 +10,10 @@ license: Apache-2.0 AND LGPL-2.1-or-later
 grade: stable
 confinement: strict
 
-base: core22
-architectures:
-  - build-on: arm64
+base: core24
+platforms:
+  amd64:
+  arm64:
 
 slots:
   custom-gpio-dev:
@@ -158,7 +159,9 @@ parts:
 
       # Add the App to be build from CHIP SDK's build system
       # See https://github.com/project-chip/connectedhomeip/issues/32925
+      rm -rf examples/chip-gpio-app
       cp -vr $CRAFT_PART_BUILD examples/chip-gpio-app
+      cp examples/lighting-app/lighting-common/lighting-app.{matter,zap} examples/chip-gpio-app/lighting-common/
 
       cd examples/chip-gpio-app/linux
       gn gen out/build
@@ -178,6 +181,7 @@ parts:
       - libdbus-1-dev
       - libglib2.0-dev
       - libavahi-client-dev
+      - libevent-dev
       - ninja-build
       - python3-venv
       - python3-dev
