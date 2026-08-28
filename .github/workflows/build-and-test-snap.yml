@@ -27,7 +27,7 @@ jobs:
         id: snapcraft
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.ARTIFACT_ARM64 }}
           path: ${{ steps.snapcraft.outputs.snap }}
@@ -40,7 +40,7 @@ jobs:
     needs: build-arm64
     steps:
       - name: Download locally built snap
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.ARTIFACT_ARM64 }}
 
@@ -59,7 +59,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Download locally built snap
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: ${{ env.ARTIFACT_ARM64 }}
 
@@ -79,7 +79,7 @@ jobs:
 
       - name: Upload snap logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: snap-logs
           path: tests/logs/*.log
