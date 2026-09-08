@@ -1,43 +1,29 @@
 #!/usr/bin/env bash
 
-if [ "$1" = "teardown" ]; then
-  sudo rmmod gpio_mockup
-  rm -rf gpio-mockup
+set -euo pipefail
+
+gpio_sim_device=/sys/kernel/config/gpio-sim/matter-pi-gpio
+
+if [ "${1:-}" = "teardown" ]; then
+  if [ -d "$gpio_sim_device" ]; then
+    echo 0 | sudo tee "$gpio_sim_device/live" >/dev/null
+    sudo rmdir "$gpio_sim_device/bank0" "$gpio_sim_device"
+  fi
+  sudo modprobe -r gpio-sim
   exit 0
 fi
 
-mkdir gpio-mockup
-cd gpio-mockup
-
-# Update and install dependencies
 sudo apt-get update
-sudo apt-get install -y linux-headers-$(uname -r)
-sudo apt-get install -y build-essential flex bison make
+sudo apt-get install -y "linux-modules-extra-$(uname -r)"
 
 echo "Kernel version: $(uname -r)"
 
-. /etc/os-release
-
-# Get GPIO Mockup driver
-wget https://git.launchpad.net/~canonical-kernel/ubuntu/+source/linux-azure/+git/$UBUNTU_CODENAME/plain/drivers/gpio/gpio-mockup.c
-wget https://git.launchpad.net/~canonical-kernel/ubuntu/+source/linux-azure/+git/$UBUNTU_CODENAME/plain/drivers/gpio/gpiolib.h
-
-# Create Makefile
-echo "
-obj-m = gpio-mockup.o
-KVERSION = \$(shell uname -r)
-all:
-	make -C /lib/modules/\$(KVERSION)/build M=\$(PWD) modules
-clean:
-	make -C /lib/modules/\$(KVERSION)/build M=\$(PWD) clean
-" >Makefile
-
-make -j$(nproc)
-
-sudo insmod gpio-mockup.ko gpio_mockup_ranges=-1,16 gpio_mockup_named_lines
+sudo modprobe gpio-sim
+sudo mkdir "$gpio_sim_device"
+sudo mkdir "$gpio_sim_device/bank0"
+echo 16 | sudo tee "$gpio_sim_device/bank0/num_lines" >/dev/null
+echo 1 | sudo tee "$gpio_sim_device/live" >/dev/null
 
 gpio_mock_chip=$(ls /dev/gpiochip* | sort -n | head -n 1)
 
 echo "GPIO Mockup chip: $gpio_mock_chip"
-
-cd ..
