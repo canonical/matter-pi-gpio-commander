@@ -128,7 +128,7 @@ func getMockGPIO() (string, error) {
 }
 
 func authorizeGpioMock(path string) (string, error) {
-	const sedAuthorizeMockRead = `sed -i '/\/sys\/devices\/platform\/axi\/\*.pcie\/\*.gpio\/gpiochip4\/dev/a \      - /sys/devices/platform/gpio-mockup.*/gpiochip*/dev' squashfs-root/meta/snap.yaml`
+	const sedAuthorizeMockRead = `sed -i '/\/sys\/devices\/platform\/axi\/\*.pcie\/\*.gpio\/gpiochip4\/dev/a \      - /sys/devices/platform/gpio-sim.*/gpiochip*/dev' squashfs-root/meta/snap.yaml`
 	const sedAuthorizeMockGPIOsChips = `sed -i 's/gpiochip[0,4]/gpiochip\*/' squashfs-root/meta/snap.yaml `
 
 	utils.Exec(nil, "rm -rf squashfs-root")
