@@ -10,9 +10,10 @@ license: Apache-2.0 AND LGPL-2.1-or-later
 grade: stable
 confinement: strict
 
-base: core22
-architectures:
-  - build-on: arm64
+base: core24
+platforms:
+  amd64:
+  arm64:
 
 slots:
   custom-gpio-dev:
@@ -49,43 +50,19 @@ parts:
     # NOTE: The deb package libgpiod2 is not being used anymore because
     # the ARM64 Runner on GH needs the library in it's API v2 form. 
     # Refer to https://github.com/canonical/matter-pi-gpio-commander/issues/53
-    plugin: nil
+    plugin: autotools
     source: https://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git
     source-branch: v2.1
-    override-build: |
-
-      mkdir -p $CRAFT_PART_INSTALL/usr/
-      ./autogen.sh --prefix=$CRAFT_PART_INSTALL/usr --enable-bindings-cxx
-      make install -j$(nproc)
-
-      cp include/gpiod.h $CRAFT_STAGE/gpiod.h
-      
-      mkdir -p /usr/lib/aarch64-linux-gnu
-      cd $CRAFT_PART_INSTALL/usr/lib
-      rm *.a *.la
-
-      if [[ $SNAP_ARCH == "arm64" ]]; then
-        cp $CRAFT_PART_INSTALL/usr/lib/libgpiod.so* /usr/lib/aarch64-linux-gnu
-      fi
-
-      if [[ $SNAP_ARCH == "amd64" ]]; then
-        cp $CRAFT_PART_INSTALL/usr/lib/libgpiod.so* /usr/lib/x86_64-linux-gnu
-      fi
-
-      # Install in the system for all parts
-      cp $CRAFT_PART_INSTALL/usr/include/gpiod.* /usr/include/
-
-
+    autotools-configure-parameters:
+      - --prefix=/usr
+      - --enable-bindings-cxx
     build-packages:
       - g++
-      - gcc
-      - git
-      - autoconf
-      - automake
       - pkg-config
       - autoconf-archive
-      - libtool
-      - make
+    prime:
+      - -usr/lib/*.a
+      - -usr/lib/*.la
 
   test-blink:
     after: [libgpiod]
@@ -93,16 +70,16 @@ parts:
     source: .
     override-build: |
 
-      g++ -Wall test-blink.cpp -lgpiod -o test-blink
+      g++ -Wall \
+        -I$CRAFT_STAGE/usr/include \
+        -L$CRAFT_STAGE/usr/lib \
+        test-blink.cpp -lgpiod -o test-blink
 
       mkdir -p $CRAFT_PART_INSTALL/bin
       cp test-blink $CRAFT_PART_INSTALL/bin/
 
     build-packages:
       - g++
-      - gcc
-      - libgpiod-dev
-      - tree
   
   connectedhomeip:
     plugin: nil
@@ -115,8 +92,6 @@ parts:
       craftctl default
       # shallow clone the submodules
       scripts/checkout_submodules.py --shallow --platform linux
-
-    override-build: |
       # add SDK's tag, fall back to the commit hash
       CHIP_REF=$(git describe --exact-match --tags 2> /dev/null || git rev-parse --short HEAD)
       craftctl set version=$(craftctl get version)+chip-$CHIP_REF
@@ -127,7 +102,7 @@ parts:
     source: app
     override-build: |
 
-      cp $CRAFT_STAGE/gpiod.h linux/include 
+      cp $CRAFT_STAGE/usr/include/gpiod.h linux/include
 
       # Change to SDK's directory to allow caching of the activation
       # regardless of this part's pull and build status.
@@ -158,17 +133,17 @@ parts:
 
       # Add the App to be build from CHIP SDK's build system
       # See https://github.com/project-chip/connectedhomeip/issues/32925
+      rm -rf examples/chip-gpio-app
       cp -vr $CRAFT_PART_BUILD examples/chip-gpio-app
+      cp examples/lighting-app/lighting-common/lighting-app.{matter,zap} examples/chip-gpio-app/lighting-common/
 
       cd examples/chip-gpio-app/linux
+      export LIBRARY_PATH="$CRAFT_STAGE/usr/lib${LIBRARY_PATH:+:$LIBRARY_PATH}"
       gn gen out/build
       ninja -C out/build
 
-      # List shared objects
-      ldd out/build/chip-gpio-app
-      
       mkdir -p $CRAFT_PART_INSTALL/bin
-      cp out/build/chip-gpio-app $CRAFT_PART_INSTALL/bin/lighting-app        
+      cp out/build/chip-gpio-app $CRAFT_PART_INSTALL/bin/lighting-app
     build-packages:
       - git
       - gcc
@@ -178,6 +153,7 @@ parts:
       - libdbus-1-dev
       - libglib2.0-dev
       - libavahi-client-dev
+      - libevent-dev
       - ninja-build
       - python3-venv
       - python3-dev
@@ -186,15 +162,13 @@ parts:
       - libcairo2-dev
       - libreadline-dev
       - generate-ninja
-      - libgpiod-dev 
 
   local-bin:
-    plugin: nil
+    plugin: dump
     source: snap/local/bin/
-    override-build: |
-      mkdir -p $CRAFT_PART_INSTALL/bin
-      cp -v run.sh $CRAFT_PART_INSTALL/bin/
-      cp -v load-snap-options.sh $CRAFT_PART_INSTALL/bin/
+    organize:
+      run.sh: bin/run.sh
+      load-snap-options.sh: bin/load-snap-options.sh
 
 apps:
   lighting:
