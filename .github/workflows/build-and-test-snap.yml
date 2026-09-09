@@ -10,6 +10,10 @@ on:
   # Allow manual trigger
   workflow_dispatch:
 
+concurrency:
+  group: snap-ci
+  cancel-in-progress: false
+
 env:
   ARTIFACT_ARM64: matter-pi-gpio-commander_${{ github.run_number}}_arm64
 
@@ -88,18 +92,17 @@ jobs:
     # Only promote if we are on the main branch
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: [build-arm64, test-arm64]
+    needs: [build-arm64, publish-edge-arm64, test-arm64]
     steps:
       - name: Install Snapcraft
-        # Install snapcraft and add it to PATH
         run: |
           sudo snap install snapcraft --classic
-          echo /snap/bin >> $GITHUB_PATH
         shell: bash
 
-      - name: Promote Snap
-        env: # Workaround for https://github.com/snapcore/snapcraft/issues/4439
-          SNAPCRAFT_HAS_TTY: "true"
+      - name: Promote to beta
+        env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
         run: |
-          yes | snapcraft promote matter-pi-gpio-commander --from-channel latest/edge --to-channel latest/beta
+          snapcraft promote matter-pi-gpio-commander --yes \
+            --from-channel latest/edge \
+            --to-channel latest/beta
