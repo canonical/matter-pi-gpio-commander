@@ -1,11 +1,13 @@
 package tests
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
+	"os/exec"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -20,6 +22,7 @@ const (
 	specificGpioChip = "GPIO_CHIP"
 	specificGpioLine = "GPIO_LINE"
 	gpioChipMock     = "MOCK_GPIO"
+	snapRevision     = "SNAP_REVISION"
 )
 
 const snapMatterPiGPIO = "matter-pi-gpio-commander"
@@ -41,8 +44,6 @@ func TestMain(m *testing.M) {
 }
 
 func setup() (teardown func(), err error) {
-	var newSnapPath string
-
 	log.Println("[CLEAN]")
 	utils.SnapRemove(nil, snapMatterPiGPIO)
 	utils.SnapRemove(nil, chipToolSnap)
@@ -52,8 +53,6 @@ func setup() (teardown func(), err error) {
 	teardown = func() {
 		log.Println("[TEARDOWN]")
 
-		utils.Exec(nil, "rm "+newSnapPath)
-
 		log.Println("Removing installed snap:", env.Teardown())
 		if env.Teardown() {
 			utils.SnapRemove(nil, snapMatterPiGPIO)
@@ -61,26 +60,42 @@ func setup() (teardown func(), err error) {
 		}
 	}
 
-	// setup gpio mock
-	if newSnapPath, err = setupGPIOMock(env.SnapPath()); err != nil {
-		teardown()
-		return
-	}
-
 	// install matter-pi-gpio-commander
 	if env.SnapPath() != "" {
-		err = utils.SnapInstallFromFile(nil, newSnapPath)
-		utils.SnapConnect(nil, snapMatterPiGPIO+":custom-gpio", snapMatterPiGPIO+":custom-gpio-dev")
+		err = utils.SnapInstallFromFile(nil, env.SnapPath())
 	} else {
-		err = utils.SnapInstallFromStore(nil, snapMatterPiGPIO, env.SnapChannel())
+		err = installSnapRevision(snapMatterPiGPIO, os.Getenv(snapRevision))
 	}
-
-	utils.SnapConnect(nil, snapMatterPiGPIO+":avahi-control", "")
-	utils.SnapConnect(nil, snapMatterPiGPIO+":bluez", "")
-
 	if err != nil {
 		teardown()
 		return
+	}
+
+	if err = utils.SnapConnect(nil, snapMatterPiGPIO+":avahi-control", ""); err != nil {
+		teardown()
+		return
+	}
+
+	if useGPIOMock() {
+		stdout, _, mockErr := utils.Exec(nil, "./gpio-mock.sh 2>&1")
+		_ = utils.WriteLogFile(nil, "gpio-mock", stdout)
+		if mockErr != nil {
+			teardown()
+			return nil, fmt.Errorf("failed to set up gpio-sim: %w", mockErr)
+		}
+		if err = utils.SnapConnect(nil,
+			snapMatterPiGPIO+":custom-gpio",
+			snapMatterPiGPIO+":custom-gpio-dev"); err != nil {
+			teardown()
+			return
+		}
+	} else {
+		if err = utils.SnapConnect(nil,
+			snapMatterPiGPIO+":custom-gpio",
+			snapMatterPiGPIO+":custom-gpio-dev"); err != nil {
+			teardown()
+			return
+		}
 	}
 
 	if err = setupGPIO(); err != nil {
@@ -91,26 +106,25 @@ func setup() (teardown func(), err error) {
 	return
 }
 
-func setupGPIOMock(snapPath string) (string, error) {
-	// Check if gpio mock is enabled and a local snap is provided
-	if !useGPIOMock() || env.SnapPath() == "" {
-		return snapPath, nil
+func installSnapRevision(name, revision string) error {
+	if _, err := strconv.ParseUint(revision, 10, 64); err != nil {
+		return fmt.Errorf("%s must be a numeric Store revision: %q", snapRevision, revision)
 	}
 
-	// Run gpio mockup script
-	stdout, _, err := utils.Exec(nil, "./gpio-mock.sh 2>&1")
-	_ = utils.WriteLogFile(nil, "gpio-mock", stdout)
-	if err != nil {
-		return snapPath, fmt.Errorf("failed to run gpio mockup script: %s", err)
+	var lastErr error
+	for _, delay := range []time.Duration{0, 10 * time.Second, 30 * time.Second, 60 * time.Second} {
+		time.Sleep(delay)
+
+		output, err := exec.Command(
+			"sudo", "snap", "install", name, "--revision="+revision,
+		).CombinedOutput()
+		if err == nil {
+			return nil
+		}
+		lastErr = fmt.Errorf("%w: %s", err, strings.TrimSpace(string(output)))
 	}
 
-	// authorize gpio mock
-	newPath, err := authorizeGpioMock(snapPath)
-	if err != nil {
-		return snapPath, err
-	}
-
-	return newPath, nil
+	return fmt.Errorf("install %s revision %s: %w", name, revision, lastErr)
 }
 
 func useGPIOMock() bool {
@@ -118,59 +132,16 @@ func useGPIOMock() bool {
 }
 
 func getMockGPIO() (string, error) {
-	gpioChipNumber, stderr, err := utils.Exec(nil, "ls /dev/gpiochip* | sort -n | tail -n 1 | cut -d'p' -f3")
+	gpioChipNumber, stderr, err := utils.Exec(nil, "cat /tmp/matter-pi-gpio-sim-chip")
 	if err != nil || stderr != "" {
 		return "", fmt.Errorf("failed to get mock gpio chip number, Error %s: %s", stderr, err)
 	}
-	gpioChipNumber = strings.TrimSpace(gpioChipNumber)
-	gpioChipNumber = strings.Trim(gpioChipNumber, "\n")
-	return gpioChipNumber, nil
-}
-
-func authorizeGpioMock(path string) (string, error) {
-	const sedAuthorizeMockRead = `sed -i '/\/sys\/devices\/platform\/axi\/\*.pcie\/\*.gpio\/gpiochip4\/dev/a \      - /sys/devices/platform/gpio-sim.*/gpiochip*/dev' squashfs-root/meta/snap.yaml`
-	const sedAuthorizeMockGPIOsChips = `sed -i 's/gpiochip[0,4]/gpiochip\*/' squashfs-root/meta/snap.yaml `
-
-	utils.Exec(nil, "rm -rf squashfs-root")
-
-	_, stderr, err := utils.Exec(nil, "unsquashfs "+path)
-	if err != nil || stderr != "" {
-		log.Printf("stderr: %s", stderr)
-		log.Printf("err: %s", err)
-		return "", err
-	}
-
-	_, stderr, err = utils.Exec(nil, sedAuthorizeMockRead)
-	if err != nil || stderr != "" {
-		log.Printf("stderr: %s", stderr)
-		log.Printf("err: %s", err)
-		return "", err
-	}
-
-	_, stderr, err = utils.Exec(nil, sedAuthorizeMockGPIOsChips)
-	if err != nil || stderr != "" {
-		log.Printf("stderr: %s", stderr)
-		log.Printf("err: %s", err)
-		return "", err
-	}
-
-	directory := filepath.Dir(path)
-	newPath := directory + "/mod_matter-pi-gpio-commander.snap"
-	_, stderr, err = utils.Exec(nil, "mksquashfs squashfs-root "+newPath)
-	if err != nil || stderr != "" {
-		log.Printf("stderr: %s", stderr)
-		log.Printf("err: %s", err)
-		return "", err
-	}
-
-	utils.Exec(nil, "rm -rf squashfs-root")
-	return newPath, nil
+	return strings.TrimSpace(gpioChipNumber), nil
 }
 
 func setupGPIO() error {
 	var err error
-	// The GPIO_MOCKUP takes precedence over the specific GPIO_CHIP and GPIO_LINE
-	if useGPIOMock() && env.SnapPath() != "" {
+	if useGPIOMock() {
 		utils.SnapSet(nil, snapMatterPiGPIO, "gpiochip-validation", "false")
 
 		gpioChip, err = getMockGPIO()
@@ -189,32 +160,138 @@ func setupGPIO() error {
 	return nil
 }
 
+func gpioState() (string, error) {
+	stdout, stderr, err := utils.Exec(nil,
+		fmt.Sprintf("./gpio-mock.sh state %s", gpioLine))
+	if err != nil {
+		return "", fmt.Errorf("read simulated GPIO state: %w: %s", err, stderr)
+	}
+	return strings.TrimSpace(stdout), nil
+}
+
+func waitForGPIOState(t *testing.T, expected string) {
+	t.Helper()
+
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		state, err := gpioState()
+		assert.NoError(collect, err)
+		assert.Equal(collect, expected, state)
+	}, 5*time.Second, 100*time.Millisecond)
+}
+
+func runChipTool(t *testing.T, args string) string {
+	t.Helper()
+
+	stdout, _, err := utils.Exec(t, "sudo chip-tool "+args+" 2>&1")
+	assert.NoError(t, utils.WriteLogFile(t, chipToolSnap, stdout))
+	assert.NoError(t, err)
+	return stdout
+}
+
+func stopBlink(t *testing.T) {
+	t.Helper()
+
+	_, _, _ = utils.Exec(t,
+		`sudo sh -c 'for pid in $(pgrep -f "/[b]in/test-blink" || true); do kill "$pid"; done'`)
+	assert.Eventually(t, func() bool {
+		_, _, err := utils.Exec(nil, `pgrep -f "/[b]in/test-blink"`)
+		return err != nil
+	}, 5*time.Second, 100*time.Millisecond)
+}
+
+func TestConfigurationValidation(t *testing.T) {
+	if !useGPIOMock() {
+		t.Skip("configuration restoration requires the simulated GPIO")
+	}
+
+	_, _, err := utils.Exec(nil, "sudo snap set "+snapMatterPiGPIO+" gpio=0")
+	assert.Error(t, err)
+
+	stdout, _, err := utils.Exec(t, "sudo snap get "+snapMatterPiGPIO+" gpio")
+	assert.NoError(t, err)
+	assert.Equal(t, gpioLine, strings.TrimSpace(stdout))
+
+	utils.SnapSet(t, snapMatterPiGPIO, "gpiochip", "0")
+	utils.SnapSet(t, snapMatterPiGPIO, "gpiochip-validation", "true")
+	_, _, err = utils.Exec(nil, "sudo snap set "+snapMatterPiGPIO+" gpiochip=7")
+	assert.Error(t, err)
+
+	utils.SnapSet(t, snapMatterPiGPIO, "gpiochip-validation", "false")
+	utils.SnapSet(t, snapMatterPiGPIO, "gpiochip", gpioChip)
+}
+
+func TestPackagingAndInstallBehavior(t *testing.T) {
+	stdout, _, err := utils.Exec(t, "snap info --verbose "+snapMatterPiGPIO)
+	assert.NoError(t, err)
+	assert.Regexp(t, `(?m)^\s*confinement:\s+strict\s*$`, stdout)
+
+	stdout, _, err = utils.Exec(t, "sudo snap run "+snapMatterPiGPIO+".help")
+	assert.NoError(t, err)
+	assert.Contains(t, stdout, "Usage")
+
+	assert.False(t, utils.SnapServicesEnabled(t, snapMatterPiGPIO))
+	assert.False(t, utils.SnapServicesActive(t, snapMatterPiGPIO))
+}
+
+func TestInvalidGPIOLine(t *testing.T) {
+	if !useGPIOMock() {
+		t.Skip("runtime recovery requires the simulated GPIO")
+	}
+
+	utils.SnapSet(t, snapMatterPiGPIO, "gpio", "99")
+	stdout, _, err := utils.Exec(nil, "sudo snap run "+snapMatterPiGPIO+".test-blink 2>&1")
+	assert.Error(t, err)
+	assert.Contains(t, stdout, "Failed to request output line")
+	utils.SnapSet(t, snapMatterPiGPIO, "gpio", gpioLine)
+}
+
 /*
 TestBlinkOperation runs the test-blink app in the snap.
 The log output is checked for the correctly configured GPIO Chip and GPIO Line,
 as well as the existence of the ON and OFF log messages.
 */
 func TestBlinkOperation(t *testing.T) {
-	/*
-		`test-blink` runs until it is stopped.
-		We use a context with a timeout to manually stop it after a few seconds.
-	*/
+	if !useGPIOMock() {
+		t.Skip("GPIO state assertions require the simulator")
+	}
+
+	_, _, err := utils.Exec(nil, "sudo snap disconnect "+
+		snapMatterPiGPIO+":custom-gpio "+
+		snapMatterPiGPIO+":custom-gpio-dev")
+	assert.NoError(t, err)
+
+	stdout, _, err := utils.Exec(nil,
+		"sudo timeout 5s snap run "+snapMatterPiGPIO+".test-blink 2>&1")
+	assert.Error(t, err)
+	assert.Contains(t, stdout, "Failed to request output line")
+	stopBlink(t)
+	assert.NoError(t, utils.SnapConnect(t,
+		snapMatterPiGPIO+":custom-gpio",
+		snapMatterPiGPIO+":custom-gpio-dev"))
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	t.Cleanup(cancel)
 
-	/*
-		Context timeout does not stop the process in a GitHub runner.
-		We have to manually kill it. We do that shortly after the context should have timed out.
-		See issue https://github.com/canonical/matter-snap-testing/issues/17
-	*/
-	go func() {
-		time.Sleep(10 * time.Second)
-		utils.Exec(t, `sudo pkill -f "test-blink"`)
-	}()
+	var output bytes.Buffer
+	command := exec.CommandContext(ctx, "sudo", "snap", "run", snapMatterPiGPIO+".test-blink")
+	command.Stdout = &output
+	command.Stderr = &output
+	assert.NoError(t, command.Start())
 
-	stdout, _, err := utils.ExecContextVerbose(t, ctx, "sudo "+snapMatterPiGPIO+".test-blink")
+	seen := map[string]bool{}
+	assert.Eventually(t, func() bool {
+		state, stateErr := gpioState()
+		if stateErr == nil {
+			seen[state] = true
+		}
+		return seen["high"] && seen["low"]
+	}, 4*time.Second, 50*time.Millisecond)
+	cancel()
+	stopBlink(t)
+	_ = command.Wait()
+
+	stdout = output.String()
 	assert.NoError(t, utils.WriteLogFile(t, snapMatterPiGPIO, stdout))
-	assert.NoError(t, err)
 
 	assert.Contains(t, stdout, fmt.Sprintf("GPIO: %s", gpioLine))
 	assert.Contains(t, stdout, fmt.Sprintf("GPIOCHIP: %s", gpioChip))
@@ -258,14 +335,30 @@ func TestWifiMatterCommander(t *testing.T) {
 	})
 
 	t.Run("Control", func(t *testing.T) {
-		stdoutCombined := ""
-		for i := 0; i < 4; i++ {
-			stdout, _, err = utils.Exec(t, "sudo chip-tool onoff toggle 110 1 2>&1")
-			stdoutCombined += stdout
-			// TODO: We should be saving the logs (append to file) before exiting on error
-			assert.NoError(t, err)
-		}
-		assert.NoError(t, utils.WriteLogFile(t, chipToolSnap, stdoutCombined))
-		assert.Contains(t, stdoutCombined, "Success status report received. Session was established")
+		stdout = runChipTool(t, "onoff off 110 1")
+		assert.Contains(t, stdout, "Success status report received")
+		waitForGPIOState(t, "low")
+
+		stdout = runChipTool(t, "onoff read on-off 110 1")
+		assert.Contains(t, stdout, "OnOff")
+
+		stdout = runChipTool(t, "onoff on 110 1")
+		assert.Contains(t, stdout, "Success status report received")
+		waitForGPIOState(t, "high")
+
+		stdout = runChipTool(t, "onoff toggle 110 1")
+		assert.Contains(t, stdout, "Success status report received")
+		waitForGPIOState(t, "low")
+	})
+
+	t.Run("RestartPersistence", func(t *testing.T) {
+		utils.SnapRestart(t, snapMatterPiGPIO)
+		assert.Eventually(t, func() bool {
+			return utils.SnapServicesActive(t, snapMatterPiGPIO)
+		}, 10*time.Second, 500*time.Millisecond)
+
+		stdout = runChipTool(t, "onoff on 110 1")
+		assert.Contains(t, stdout, "Success status report received")
+		waitForGPIOState(t, "high")
 	})
 }
