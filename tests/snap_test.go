@@ -181,7 +181,7 @@ func TestConfigurationValidation(t *testing.T) {
 		t.Skip("configuration restoration requires the simulated GPIO")
 	}
 
-	_, _, err := utils.Exec(t, "sudo snap set "+snapMatterPiGPIO+" gpio=0")
+	_, _, err := utils.Exec(nil, "sudo snap set "+snapMatterPiGPIO+" gpio=0")
 	assert.Error(t, err)
 
 	stdout, _, err := utils.Exec(t, "snap get "+snapMatterPiGPIO+" gpio")
@@ -190,7 +190,7 @@ func TestConfigurationValidation(t *testing.T) {
 
 	utils.SnapSet(t, snapMatterPiGPIO, "gpiochip", "0")
 	utils.SnapSet(t, snapMatterPiGPIO, "gpiochip-validation", "true")
-	_, _, err = utils.Exec(t, "sudo snap set "+snapMatterPiGPIO+" gpiochip=7")
+	_, _, err = utils.Exec(nil, "sudo snap set "+snapMatterPiGPIO+" gpiochip=7")
 	assert.Error(t, err)
 
 	utils.SnapSet(t, snapMatterPiGPIO, "gpiochip-validation", "false")
@@ -200,7 +200,7 @@ func TestConfigurationValidation(t *testing.T) {
 func TestPackagingAndInstallBehavior(t *testing.T) {
 	stdout, _, err := utils.Exec(t, "snap info --verbose "+snapMatterPiGPIO)
 	assert.NoError(t, err)
-	assert.Contains(t, stdout, "confinement: strict")
+	assert.Regexp(t, `(?m)^\s*confinement:\s+strict\s*$`, stdout)
 
 	stdout, _, err = utils.Exec(t, "sudo snap run "+snapMatterPiGPIO+".help")
 	assert.NoError(t, err)
@@ -216,7 +216,7 @@ func TestInvalidGPIOLine(t *testing.T) {
 	}
 
 	utils.SnapSet(t, snapMatterPiGPIO, "gpio", "99")
-	stdout, _, err := utils.Exec(t, "sudo snap run "+snapMatterPiGPIO+".test-blink 2>&1")
+	stdout, _, err := utils.Exec(nil, "sudo snap run "+snapMatterPiGPIO+".test-blink 2>&1")
 	assert.Error(t, err)
 	assert.Contains(t, stdout, "Failed to request output line")
 	utils.SnapSet(t, snapMatterPiGPIO, "gpio", gpioLine)
@@ -232,12 +232,12 @@ func TestBlinkOperation(t *testing.T) {
 		t.Skip("GPIO state assertions require the simulator")
 	}
 
-	_, _, err := utils.Exec(t, "sudo snap disconnect "+
+	_, _, err := utils.Exec(nil, "sudo snap disconnect "+
 		snapMatterPiGPIO+":custom-gpio "+
 		snapMatterPiGPIO+":custom-gpio-dev")
 	assert.NoError(t, err)
 
-	stdout, _, err := utils.Exec(t,
+	stdout, _, err := utils.Exec(nil,
 		"sudo timeout 5s snap run "+snapMatterPiGPIO+".test-blink 2>&1")
 	assert.Error(t, err)
 	assert.Contains(t, stdout, "Failed to request output line")
@@ -264,8 +264,8 @@ func TestBlinkOperation(t *testing.T) {
 		return seen["high"] && seen["low"]
 	}, 4*time.Second, 50*time.Millisecond)
 	cancel()
-	_ = command.Wait()
 	stopBlink(t)
+	_ = command.Wait()
 
 	stdout = output.String()
 	assert.NoError(t, utils.WriteLogFile(t, snapMatterPiGPIO, stdout))

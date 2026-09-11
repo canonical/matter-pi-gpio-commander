@@ -28,24 +28,24 @@ if [ "${1:-}" = "state" ]; then
     sudo mount -t debugfs debugfs /sys/kernel/debug
   fi
 
-  gpio_base=$(
-    sudo awk -v chip="gpiochip${chip_number}:" '
-      $1 == chip {
+  sudo awk -v chip="gpiochip${chip_number}:" -v offset="$line_offset" '
+    $1 == chip {
+      in_chip = 1
+      base = 0
+      if ($2 == "GPIOs") {
         split($3, range, "-")
-        print range[1]
-        exit
+        base = range[1]
       }
-    ' /sys/kernel/debug/gpio
-  )
-  if [ -z "$gpio_base" ]; then
-    echo "unknown"
-    exit 1
-  fi
-
-  gpio_number=$((gpio_base + line_offset))
-  sudo awk -v gpio="gpio-${gpio_number}" '
-    $1 == gpio && $0 ~ / out hi( |$)/ { print "high"; found = 1; exit }
-    $1 == gpio && $0 ~ / out lo( |$)/ { print "low"; found = 1; exit }
+      gpio = "gpio-" (base + offset)
+      next
+    }
+    in_chip && /^gpiochip/ { exit 1 }
+    in_chip && $1 == gpio && $0 ~ /(output-high|out hi)(,| |$)/ {
+      print "high"; found = 1; exit
+    }
+    in_chip && $1 == gpio && $0 ~ /(output-low|out lo)(,| |$)/ {
+      print "low"; found = 1; exit
+    }
     END { if (!found) exit 1 }
   ' /sys/kernel/debug/gpio
   exit 0
@@ -53,8 +53,10 @@ fi
 
 teardown
 
-sudo apt-get update
-sudo apt-get install -y "linux-modules-extra-$(uname -r)"
+if ! modinfo gpio-sim >/dev/null 2>&1; then
+  sudo apt-get update
+  sudo apt-get install -y "linux-modules-extra-$(uname -r)"
+fi
 
 echo "Kernel version: $(uname -r)"
 
@@ -69,28 +71,34 @@ sudo mkdir "$gpio_sim_device/bank0"
 echo 16 | sudo tee "$gpio_sim_device/bank0/num_lines" >/dev/null
 echo 1 | sudo tee "$gpio_sim_device/live" >/dev/null
 
-gpio_mock_chip=$(
-  find /sys/class/gpio -maxdepth 1 -type l -name 'gpiochip*' -printf '%f\n' |
-    while read -r chip; do
-      if readlink -f "/sys/class/gpio/$chip" | grep -q '/gpio-sim\.'; then
-        echo "$chip"
-      fi
-    done |
-    sort -V |
-    tail -n 1
-)
-if [ -z "$gpio_mock_chip" ]; then
+actual_gpio_mock_chip=$(cat "$gpio_sim_device/bank0/chip_name")
+if [ -z "$actual_gpio_mock_chip" ]; then
   echo "Failed to find the gpio-sim chip" >&2
   exit 1
 fi
 
-gpio_chip_number=${gpio_mock_chip#gpiochip}
+for _ in $(seq 1 50); do
+  [ -e "/dev/$actual_gpio_mock_chip" ] && break
+  sleep 0.1
+done
+if [ ! -e "/dev/$actual_gpio_mock_chip" ]; then
+  echo "Device node /dev/$actual_gpio_mock_chip was not created" >&2
+  exit 1
+fi
+
+actual_gpio_chip_number=${actual_gpio_mock_chip#gpiochip}
+gpio_mock_chip=$actual_gpio_mock_chip
+gpio_chip_number=$actual_gpio_chip_number
 if [ "$gpio_chip_number" != "0" ] && [ "$gpio_chip_number" != "4" ]; then
   echo "gpio-sim created /dev/$gpio_mock_chip; the snap only permits gpiochip0 or gpiochip4" >&2
   exit 1
 fi
 
-gpio_sysfs_path=$(readlink -f "/sys/class/gpio/$gpio_mock_chip")
+gpio_class_path="/sys/class/gpio/${actual_gpio_mock_chip/gpiochip/chip}"
+if [ ! -e "$gpio_class_path" ]; then
+  gpio_class_path="/sys/class/gpio/$actual_gpio_mock_chip"
+fi
+gpio_sysfs_path=$(readlink -f "$gpio_class_path")
 echo "$gpio_chip_number" > "$state_file"
 
 if ! mountpoint -q /sys/kernel/debug; then
