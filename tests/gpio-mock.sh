@@ -4,6 +4,7 @@ set -euo pipefail
 
 gpio_sim_device=/sys/kernel/config/gpio-sim/matter-pi-gpio
 state_file=/tmp/matter-pi-gpio-sim-chip
+sysfs_path_file=/tmp/matter-pi-gpio-sim-sysfs
 
 teardown() {
   if [ -d "$gpio_sim_device" ]; then
@@ -12,7 +13,7 @@ teardown() {
   fi
 
   sudo modprobe -r gpio-sim >/dev/null 2>&1 || true
-  rm -f "$state_file"
+  rm -f "$state_file" "$sysfs_path_file"
 }
 
 if [ "${1:-}" = "teardown" ]; then
@@ -21,34 +22,19 @@ if [ "${1:-}" = "teardown" ]; then
 fi
 
 if [ "${1:-}" = "state" ]; then
-  chip_number="${2:?GPIO chip number is required}"
-  line_offset="${3:?GPIO line offset is required}"
+  line_offset="${2:?GPIO line offset is required}"
+  gpio_sysfs_path=$(cat "$sysfs_path_file")
+  value=$(cat "$gpio_sysfs_path/sim_gpio${line_offset}/value")
 
-  if ! mountpoint -q /sys/kernel/debug; then
-    sudo mount -t debugfs debugfs /sys/kernel/debug
-  fi
-
-  sudo awk -v chip="gpiochip${chip_number}:" -v offset="$line_offset" '
-    $1 == chip {
-      in_chip = 1
-      base = 0
-      if ($2 == "GPIOs") {
-        split($3, range, "-")
-        base = range[1]
-      }
-      gpio = "gpio-" (base + offset)
-      next
-    }
-    in_chip && /^gpiochip/ { exit 1 }
-    in_chip && $1 == gpio && $0 ~ /(output-high|out hi)(,| |$)/ {
-      print "high"; found = 1; exit
-    }
-    in_chip && $1 == gpio && $0 ~ /(output-low|out lo)(,| |$)/ {
-      print "low"; found = 1; exit
-    }
-    END { if (!found) exit 1 }
-  ' /sys/kernel/debug/gpio
-  exit 0
+  case "$value" in
+    0) echo "low" ;;
+    1) echo "high" ;;
+    *)
+      echo "Unexpected GPIO value: $value" >&2
+      exit 1
+      ;;
+  esac
+  exit
 fi
 
 teardown
@@ -100,10 +86,7 @@ if [ ! -e "$gpio_class_path" ]; then
 fi
 gpio_sysfs_path=$(readlink -f "$gpio_class_path")
 echo "$gpio_chip_number" > "$state_file"
-
-if ! mountpoint -q /sys/kernel/debug; then
-  sudo mount -t debugfs debugfs /sys/kernel/debug
-fi
+echo "$gpio_sysfs_path" > "$sysfs_path_file"
 
 echo "GPIO simulator chip: /dev/$gpio_mock_chip"
 echo "GPIO simulator sysfs path: $gpio_sysfs_path"

@@ -162,7 +162,7 @@ func setupGPIO() error {
 
 func gpioState() (string, error) {
 	stdout, stderr, err := utils.Exec(nil,
-		fmt.Sprintf("./gpio-mock.sh state %s %s", gpioChip, gpioLine))
+		fmt.Sprintf("./gpio-mock.sh state %s", gpioLine))
 	if err != nil {
 		return "", fmt.Errorf("read simulated GPIO state: %w: %s", err, stderr)
 	}
