@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -21,6 +22,7 @@ const (
 	specificGpioChip = "GPIO_CHIP"
 	specificGpioLine = "GPIO_LINE"
 	gpioChipMock     = "MOCK_GPIO"
+	snapRevision     = "SNAP_REVISION"
 )
 
 const snapMatterPiGPIO = "matter-pi-gpio-commander"
@@ -62,7 +64,7 @@ func setup() (teardown func(), err error) {
 	if env.SnapPath() != "" {
 		err = utils.SnapInstallFromFile(nil, env.SnapPath())
 	} else {
-		err = utils.SnapInstallFromStore(nil, snapMatterPiGPIO, env.SnapChannel())
+		err = installSnapRevision(snapMatterPiGPIO, os.Getenv(snapRevision))
 	}
 	if err != nil {
 		teardown()
@@ -102,6 +104,27 @@ func setup() (teardown func(), err error) {
 	}
 
 	return
+}
+
+func installSnapRevision(name, revision string) error {
+	if _, err := strconv.ParseUint(revision, 10, 64); err != nil {
+		return fmt.Errorf("%s must be a numeric Store revision: %q", snapRevision, revision)
+	}
+
+	var lastErr error
+	for _, delay := range []time.Duration{0, 10 * time.Second, 30 * time.Second, 60 * time.Second} {
+		time.Sleep(delay)
+
+		output, err := exec.Command(
+			"sudo", "snap", "install", name, "--revision="+revision,
+		).CombinedOutput()
+		if err == nil {
+			return nil
+		}
+		lastErr = fmt.Errorf("%w: %s", err, strings.TrimSpace(string(output)))
+	}
+
+	return fmt.Errorf("install %s revision %s: %w", name, revision, lastErr)
 }
 
 func useGPIOMock() bool {
@@ -184,7 +207,7 @@ func TestConfigurationValidation(t *testing.T) {
 	_, _, err := utils.Exec(nil, "sudo snap set "+snapMatterPiGPIO+" gpio=0")
 	assert.Error(t, err)
 
-	stdout, _, err := utils.Exec(t, "snap get "+snapMatterPiGPIO+" gpio")
+	stdout, _, err := utils.Exec(t, "sudo snap get "+snapMatterPiGPIO+" gpio")
 	assert.NoError(t, err)
 	assert.Equal(t, gpioLine, strings.TrimSpace(stdout))
 

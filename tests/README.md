@@ -10,7 +10,7 @@ The machine should be a compatible Raspberry Pi, unless the GPIO is mocked.
 
 To run the tests, you must set the following environment variables:
 
-- `SNAP_CHANNEL`: The channel from which the snap will be downloaded. The default value is `latest/edge`. This is ignored when using a locally built snap.
+- `SNAP_REVISION`: The numeric Store revision of the snap to test. This is required unless `SNAP_PATH` is set.
 - `SNAP_PATH`: Path to the local snap to be tested instead of downloading from the store.
 - `TEARDOWN`: Remove snaps after tests. Useful to disable when running on CI machines. The default value is `true`.
 - `MOCK_GPIO`: Use a kernel `gpio-sim` device instead of a physical gpiochip. The default value is `false`. The simulated chip must be assigned number 0 or 4 so the test can use the Store snap's existing `custom-gpio-dev` slot without modifying the application snap.

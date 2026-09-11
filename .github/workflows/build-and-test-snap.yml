@@ -14,6 +14,9 @@ concurrency:
   group: snap-ci
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 env:
   ARTIFACT_ARM64: matter-pi-gpio-commander_${{ github.run_number}}_arm64
 
@@ -120,20 +123,9 @@ jobs:
         working-directory: tests
         env:
           MOCK_GPIO: true
-          SNAP_CHANNEL: ${{ needs.publish-edge-arm64.outputs.revision }}
+          SNAP_REVISION: ${{ needs.publish-edge-arm64.outputs.revision }}
           TEARDOWN: true
-        run: |
-          revision="${{ needs.publish-edge-arm64.outputs.revision }}"
-          for delay in 0 10 30 60; do
-            sleep "$delay"
-            if snap info matter-pi-gpio-commander |
-              grep -Eq "^[[:space:]]+latest/edge:.*[[:space:]]${revision}[[:space:]]"; then
-              go test -failfast -p 1 -timeout 20m -v
-              exit
-            fi
-          done
-          echo "Store revision $revision did not become available on latest/edge" >&2
-          exit 1
+        run: go test -failfast -p 1 -timeout 20m -v
 
       - name: Upload snap logs
         if: always()
