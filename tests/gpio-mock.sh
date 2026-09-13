@@ -80,11 +80,12 @@ if [ "$gpio_chip_number" != "0" ] && [ "$gpio_chip_number" != "4" ]; then
   exit 1
 fi
 
-gpio_class_path="/sys/class/gpio/${actual_gpio_mock_chip/gpiochip/chip}"
-if [ ! -e "$gpio_class_path" ]; then
-  gpio_class_path="/sys/class/gpio/$actual_gpio_mock_chip"
+gpio_sim_platform_device=$(cat "$gpio_sim_device/dev_name")
+gpio_sysfs_path="/sys/devices/platform/$gpio_sim_platform_device/$actual_gpio_mock_chip"
+if [ ! -e "$gpio_sysfs_path/sim_gpio0/value" ]; then
+  echo "GPIO simulator state path was not created: $gpio_sysfs_path" >&2
+  exit 1
 fi
-gpio_sysfs_path=$(readlink -f "$gpio_class_path")
 echo "$gpio_chip_number" > "$state_file"
 echo "$gpio_sysfs_path" > "$sysfs_path_file"
 
