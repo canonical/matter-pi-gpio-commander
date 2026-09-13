@@ -72,7 +72,7 @@ jobs:
           echo "revision=$revision" >> "$GITHUB_OUTPUT"
 
   test-arm64:
-    if: github.event_name == 'pull_request'
+    if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-24.04-arm
     needs: build-arm64
     steps:

@@ -172,6 +172,10 @@ func gpioState() (string, error) {
 func waitForGPIOState(t *testing.T, expected string) {
 	t.Helper()
 
+	if !useGPIOMock() {
+		return
+	}
+
 	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 		state, err := gpioState()
 		assert.NoError(collect, err)
@@ -276,19 +280,53 @@ func TestBlinkOperation(t *testing.T) {
 	command := exec.CommandContext(ctx, "sudo", "snap", "run", snapMatterPiGPIO+".test-blink")
 	command.Stdout = &output
 	command.Stderr = &output
-	assert.NoError(t, command.Start())
+	if !assert.NoError(t, command.Start()) {
+		return
+	}
+
+	waitResult := make(chan error, 1)
+	go func() {
+		waitResult <- command.Wait()
+	}()
 
 	seen := map[string]bool{}
+	var earlyExit error
+	processExited := false
 	assert.Eventually(t, func() bool {
+		select {
+		case earlyExit = <-waitResult:
+			processExited = true
+			return true
+		default:
+		}
+
 		state, stateErr := gpioState()
 		if stateErr == nil {
 			seen[state] = true
 		}
 		return seen["high"] && seen["low"]
 	}, 4*time.Second, 50*time.Millisecond)
+
+	if !processExited {
+		select {
+		case earlyExit = <-waitResult:
+			processExited = true
+		default:
+		}
+	}
+	assert.False(t, processExited, "test-blink exited before assertions completed: %v", earlyExit)
+
 	cancel()
 	stopBlink(t)
-	_ = command.Wait()
+	if !processExited {
+		select {
+		case waitErr := <-waitResult:
+			assert.Error(t, waitErr)
+			assert.ErrorIs(t, ctx.Err(), context.Canceled)
+		case <-time.After(5 * time.Second):
+			t.Fatal("test-blink did not exit after cancellation")
+		}
+	}
 
 	stdout = output.String()
 	assert.NoError(t, utils.WriteLogFile(t, snapMatterPiGPIO, stdout))

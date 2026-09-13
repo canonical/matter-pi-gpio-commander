@@ -20,6 +20,7 @@ To run the tests, you must set the following environment variables:
 Example, for running tests on a Raspberry Pi 4:
 
 ```bash
+SNAP_REVISION=123 \
 GPIO_CHIP=0 \
 GPIO_LINE=16 \
 go test -v -failfast -count 1
