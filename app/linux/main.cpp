@@ -25,6 +25,7 @@
 #include "LightingManager.h"
 #include <AppMain.h>
 
+#include <app-common/zap-generated/attributes/Accessors.h>
 #include <app-common/zap-generated/ids/Attributes.h>
 #include <app-common/zap-generated/ids/Clusters.h>
 #include <app/ConcreteAttributePath.h>
@@ -46,6 +47,7 @@ using namespace chip::app::Clusters;
 namespace {
 
 constexpr char kChipEventFifoPathPrefix[] = "/tmp/chip_lighting_fifo_";
+constexpr EndpointId kLightEndpointId     = 1;
 NamedPipeCommands sChipNamedPipeCommands;
 LightingAppCommandDelegate sLightingAppCommandDelegate;
 } // namespace
@@ -72,6 +74,8 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
  * attributes to the default value.
  * The logic here expects something similar to the deprecated Plugins callback
  * emberAfPluginOnOffClusterServerPostInitCallback.
+ * Anything that needs the restored attribute values therefore belongs in
+ * ApplicationInit(), which runs after the server is initialized.
  *
  */
 void emberAfOnOffClusterInitCallback(EndpointId endpoint)
@@ -87,6 +91,32 @@ void ApplicationInit()
     {
         ChipLogError(NotSpecified, "Failed to start CHIP NamedPipeCommands");
         TEMPORARY_RETURN_IGNORED sChipNamedPipeCommands.Stop();
+    }
+
+    /*
+     * The OnOff attribute is persisted, and the server restores it while the
+     * clusters are initialized. The cluster only reports a change when the
+     * restored value differs from the one it already holds, so no attribute
+     * change callback is raised for a light that was already on. The GPIO
+     * line, which LightingManager::Init() leaves off, is therefore aligned
+     * with the restored attribute here. Without this the light turns off on
+     * every restart of the service, including the ones caused by a refresh.
+     *
+     * ApplicationInit() runs after chip::Server::Init(), so the persisted
+     * attribute is available at this point.
+     */
+    bool isOn         = false;
+    const auto status = OnOff::Attributes::OnOff::Get(kLightEndpointId, &isOn);
+    if (status != Protocols::InteractionModel::Status::Success)
+    {
+        ChipLogError(AppServer, "Failed to read the persisted OnOff attribute");
+        return;
+    }
+
+    if (isOn)
+    {
+        ChipLogProgress(AppServer, "Restoring the light to its persisted on state");
+        LightingMgr().InitiateAction(LightingManager::ON_ACTION);
     }
 }
 
