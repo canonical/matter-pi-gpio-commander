@@ -63,10 +63,17 @@ jobs:
           SNAP_FILE: ${{ needs.build-arm64.outputs.snap }}
         run: |
           set -euo pipefail
-          output=$(snapcraft upload "$SNAP_FILE" --release latest/edge 2>&1 | tee /dev/stderr)
-          revision=$(sed -nE 's/^Revision ([0-9]+) .*/\1/p' <<<"$output" | tail -n 1)
-          if [[ ! "$revision" =~ ^[0-9]+$ ]]; then
-            echo "Could not determine the uploaded Store revision" >&2
+          # snapcraft prints "Revision <N> created for '<snap>' and released to ..."
+          # with emit.message() on stdout, while its progress goes to stderr.
+          # Capturing stdout alone keeps the two streams from interleaving.
+          # Do not add --quiet here: it suppresses the message entirely.
+          output=$(snapcraft upload "$SNAP_FILE" --release latest/edge)
+          printf '%s\n' "$output"
+          revision=$(printf '%s\n' "$output" \
+            | sed -nE 's/.*Revision ([0-9]+) created for .*/\1/p' \
+            | tail -n 1)
+          if [[ -z "$revision" ]]; then
+            echo "::error::Could not determine the uploaded Store revision" >&2
             exit 1
           fi
           echo "revision=$revision" >> "$GITHUB_OUTPUT"
@@ -108,7 +115,7 @@ jobs:
   test-published-arm64:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04-arm
-    needs: [build-arm64, publish-edge-arm64]
+    needs: publish-edge-arm64
     steps:
       - name: Checkout code
         uses: actions/checkout@v7

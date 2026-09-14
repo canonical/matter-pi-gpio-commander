@@ -13,9 +13,23 @@ To run the tests, you must set the following environment variables:
 - `SNAP_REVISION`: The numeric Store revision of the snap to test. This is required unless `SNAP_PATH` is set.
 - `SNAP_PATH`: Path to the local snap to be tested instead of downloading from the store.
 - `TEARDOWN`: Remove snaps after tests. Useful to disable when running on CI machines. The default value is `true`.
-- `MOCK_GPIO`: Use a kernel `gpio-sim` device instead of a physical gpiochip. The default value is `false`. The simulated chip must be assigned number 0 or 4 so the test can use the Store snap's existing `custom-gpio-dev` slot without modifying the application snap.
+- `MOCK_GPIO`: Use a kernel `gpio-sim` device instead of a physical gpiochip. The default value is `false`. See [Simulated GPIO](#simulated-gpio) for the requirements.
 - `GPIO_CHIP`: The GPIO chip number; accepted values are `0` (for legacy Raspberry Pis) or `4` for the Raspberry Pi 5. This is ignored when mocking GPIO.
 - `GPIO_LINE`: This is the line offset to be used to test the selected gpiochip. The number of available lines can be checked with the `gpiodetect` and `gpioinfo` commands from the Debian package `gpiod`. This is ignored when mocking GPIO.
+
+### Simulated GPIO
+
+The snap is tested exactly as it is published, so its `custom-gpio-dev` slot only
+grants access to `/dev/gpiochip0` and `/dev/gpiochip4`. The simulated chip must
+therefore be assigned number 0 or 4, which only happens when the machine has no
+real GPIO chips of its own. In practice this means `MOCK_GPIO=true` works on a
+CI runner or a virtual machine, but not on a Raspberry Pi, where the simulated
+chip is created alongside the existing chips. `tests/gpio-mock.sh` fails with an
+explanatory message when the simulated chip gets an unusable number.
+
+On a Raspberry Pi, run the tests against the real GPIO by setting `GPIO_CHIP`
+and `GPIO_LINE` instead. The tests that assert the simulated line state are
+skipped in that case; the remaining tests check the application output.
 
 Example, for running tests on a Raspberry Pi 4:
 

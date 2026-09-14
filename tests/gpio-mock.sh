@@ -3,8 +3,6 @@
 set -euo pipefail
 
 gpio_sim_device=/sys/kernel/config/gpio-sim/matter-pi-gpio
-state_file=/tmp/matter-pi-gpio-sim-chip
-sysfs_path_file=/tmp/matter-pi-gpio-sim-sysfs
 
 teardown() {
   if [ -d "$gpio_sim_device" ]; then
@@ -13,29 +11,47 @@ teardown() {
   fi
 
   sudo modprobe -r gpio-sim >/dev/null 2>&1 || true
-  rm -f "$state_file" "$sysfs_path_file"
 }
 
-if [ "${1:-}" = "teardown" ]; then
-  teardown
-  exit 0
-fi
+# The chip name and the platform device name are owned by configfs,
+# so the simulator state is always queried from there instead of
+# being cached in a file.
+chip_name() {
+  if [ ! -e "$gpio_sim_device/bank0/chip_name" ]; then
+    echo "The GPIO simulator is not set up" >&2
+    exit 1
+  fi
+  cat "$gpio_sim_device/bank0/chip_name"
+}
 
-if [ "${1:-}" = "state" ]; then
-  line_offset="${2:?GPIO line offset is required}"
-  gpio_sysfs_path=$(cat "$sysfs_path_file")
-  value=$(cat "$gpio_sysfs_path/sim_gpio${line_offset}/value")
+sysfs_path() {
+  echo "/sys/devices/platform/$(cat "$gpio_sim_device/dev_name")/$(chip_name)"
+}
 
-  case "$value" in
-    0) echo "low" ;;
-    1) echo "high" ;;
-    *)
-      echo "Unexpected GPIO value: $value" >&2
-      exit 1
-      ;;
-  esac
-  exit
-fi
+case "${1:-}" in
+  teardown)
+    teardown
+    exit 0
+    ;;
+  chip)
+    chip_name | sed 's/^gpiochip//'
+    exit 0
+    ;;
+  state)
+    line_offset="${2:?GPIO line offset is required}"
+    value=$(cat "$(sysfs_path)/sim_gpio${line_offset}/value")
+
+    case "$value" in
+      0) echo "low" ;;
+      1) echo "high" ;;
+      *)
+        echo "Unexpected GPIO value: $value" >&2
+        exit 1
+        ;;
+    esac
+    exit 0
+    ;;
+esac
 
 teardown
 
@@ -72,22 +88,19 @@ if [ ! -e "/dev/$actual_gpio_mock_chip" ]; then
   exit 1
 fi
 
-actual_gpio_chip_number=${actual_gpio_mock_chip#gpiochip}
-gpio_mock_chip=$actual_gpio_mock_chip
-gpio_chip_number=$actual_gpio_chip_number
+gpio_chip_number=${actual_gpio_mock_chip#gpiochip}
 if [ "$gpio_chip_number" != "0" ] && [ "$gpio_chip_number" != "4" ]; then
-  echo "gpio-sim created /dev/$gpio_mock_chip; the snap only permits gpiochip0 or gpiochip4" >&2
+  echo "gpio-sim created /dev/$actual_gpio_mock_chip, but the snap only permits" \
+    "gpiochip0 or gpiochip4. Simulated GPIO therefore requires a machine without" \
+    "real GPIO chips, such as a CI runner." >&2
   exit 1
 fi
 
-gpio_sim_platform_device=$(cat "$gpio_sim_device/dev_name")
-gpio_sysfs_path="/sys/devices/platform/$gpio_sim_platform_device/$actual_gpio_mock_chip"
+gpio_sysfs_path=$(sysfs_path)
 if [ ! -e "$gpio_sysfs_path/sim_gpio0/value" ]; then
   echo "GPIO simulator state path was not created: $gpio_sysfs_path" >&2
   exit 1
 fi
-echo "$gpio_chip_number" > "$state_file"
-echo "$gpio_sysfs_path" > "$sysfs_path_file"
 
-echo "GPIO simulator chip: /dev/$gpio_mock_chip"
+echo "GPIO simulator chip: /dev/$actual_gpio_mock_chip"
 echo "GPIO simulator sysfs path: $gpio_sysfs_path"
