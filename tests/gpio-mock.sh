@@ -25,7 +25,10 @@ chip_name() {
 }
 
 sysfs_path() {
-  echo "/sys/devices/platform/$(cat "$gpio_sim_device/dev_name")/$(chip_name)"
+  local name dev
+  name=$(chip_name) || exit 1
+  dev=$(cat "$gpio_sim_device/dev_name") || exit 1
+  echo "/sys/devices/platform/$dev/$name"
 }
 
 case "${1:-}" in
@@ -39,7 +42,8 @@ case "${1:-}" in
     ;;
   state)
     line_offset="${2:?GPIO line offset is required}"
-    value=$(cat "$(sysfs_path)/sim_gpio${line_offset}/value")
+    state_path=$(sysfs_path) || exit 1
+    value=$(cat "$state_path/sim_gpio${line_offset}/value")
 
     case "$value" in
       0) echo "low" ;;

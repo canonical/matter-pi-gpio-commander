@@ -10,7 +10,7 @@ The machine should be a compatible Raspberry Pi, unless the GPIO is mocked.
 
 To run the tests, you must set the following environment variables:
 
-- `SNAP_REVISION`: The numeric Store revision of the snap to test. This is required unless `SNAP_PATH` is set.
+- `SNAP_CHANNEL`: The channel from which the snap will be downloaded. The default value is `latest/edge`. This is ignored when using a locally built snap.
 - `SNAP_PATH`: Path to the local snap to be tested instead of downloading from the store.
 - `TEARDOWN`: Remove snaps after tests. Useful to disable when running on CI machines. The default value is `true`.
 - `MOCK_GPIO`: Use a kernel `gpio-sim` device instead of a physical gpiochip. The default value is `false`. See [Simulated GPIO](#simulated-gpio) for the requirements.
@@ -28,13 +28,12 @@ chip is created alongside the existing chips. `tests/gpio-mock.sh` fails with an
 explanatory message when the simulated chip gets an unusable number.
 
 On a Raspberry Pi, run the tests against the real GPIO by setting `GPIO_CHIP`
-and `GPIO_LINE` instead. The tests that assert the simulated line state are
-skipped in that case; the remaining tests check the application output.
+and `GPIO_LINE` instead. The assertions on the simulated line state are then
+skipped automatically; the remaining tests check the application output.
 
 Example, for running tests on a Raspberry Pi 4:
 
 ```bash
-SNAP_REVISION=123 \
 GPIO_CHIP=0 \
 GPIO_LINE=16 \
 go test -v -failfast -count 1
