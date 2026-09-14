@@ -4,10 +4,19 @@ set -euo pipefail
 
 gpio_sim_device=/sys/kernel/config/gpio-sim/matter-pi-gpio
 
+# Removing the configfs directories only succeeds once the device is not live
+# anymore, so a failure here would leave a half-created device behind and make
+# the next setup fail on an already existing directory. The teardown therefore
+# reports what it could not remove instead of failing silently.
 teardown() {
   if [ -d "$gpio_sim_device" ]; then
-    echo 0 | sudo tee "$gpio_sim_device/live" >/dev/null
-    sudo rmdir "$gpio_sim_device/bank0" "$gpio_sim_device"
+    echo 0 | sudo tee "$gpio_sim_device/live" >/dev/null || true
+    sudo rmdir "$gpio_sim_device/bank0" 2>/dev/null || true
+    sudo rmdir "$gpio_sim_device" 2>/dev/null || true
+  fi
+
+  if [ -d "$gpio_sim_device" ]; then
+    echo "Warning: could not remove $gpio_sim_device" >&2
   fi
 
   sudo modprobe -r gpio-sim >/dev/null 2>&1 || true
@@ -43,7 +52,14 @@ case "${1:-}" in
   state)
     line_offset="${2:?GPIO line offset is required}"
     state_path=$(sysfs_path) || exit 1
-    value=$(cat "$state_path/sim_gpio${line_offset}/value")
+    value_path="$state_path/sim_gpio${line_offset}/value"
+
+    if [ ! -e "$value_path" ]; then
+      echo "The GPIO simulator has no line $line_offset: $value_path does not exist" >&2
+      exit 1
+    fi
+
+    value=$(cat "$value_path")
 
     case "$value" in
       0) echo "low" ;;
@@ -72,8 +88,8 @@ if ! mountpoint -q /sys/kernel/config; then
 fi
 
 sudo modprobe gpio-sim
-sudo mkdir "$gpio_sim_device"
-sudo mkdir "$gpio_sim_device/bank0"
+sudo mkdir -p "$gpio_sim_device"
+sudo mkdir -p "$gpio_sim_device/bank0"
 echo 16 | sudo tee "$gpio_sim_device/bank0/num_lines" >/dev/null
 echo 1 | sudo tee "$gpio_sim_device/live" >/dev/null
 

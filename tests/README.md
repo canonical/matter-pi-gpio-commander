@@ -19,7 +19,7 @@ To run the tests, you must set the following environment variables:
 
 ### Simulated GPIO
 
-The snap is tested exactly as it is published, so its `custom-gpio-dev` slot only
+The snap is tested exactly as it is built, so its `custom-gpio-dev` slot only
 grants access to `/dev/gpiochip0` and `/dev/gpiochip4`. The simulated chip must
 therefore be assigned number 0 or 4, which only happens when the machine has no
 real GPIO chips of its own. In practice this means `MOCK_GPIO=true` works on a
@@ -31,7 +31,9 @@ On a Raspberry Pi, run the tests against the real GPIO by setting `GPIO_CHIP`
 and `GPIO_LINE` instead. The assertions on the simulated line state are then
 skipped automatically; the remaining tests check the application output.
 
-Example, for running tests on a Raspberry Pi 4:
+### Examples
+
+For running tests on a Raspberry Pi 4:
 
 ```bash
 GPIO_CHIP=0 \
@@ -43,6 +45,13 @@ where:
 - `-v` is to enable verbose output
 - `-failfast` makes the test stop after first failure
 - `-count 1` is to avoid Go test caching when repeating the unchanged tests, such when re-testing a rebuilt snap.
+
+For running tests with a simulated GPIO, on a machine without real GPIO chips:
+
+```bash
+MOCK_GPIO=true \
+go test -v -failfast -count 1
+```
 
 ## Run Thread tests
 

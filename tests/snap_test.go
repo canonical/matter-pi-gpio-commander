@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"sync"
 	"syscall"
@@ -36,6 +37,14 @@ const invalidGpioLine = "99"
 
 var gpioChip = os.Getenv(specificGpioChip)
 var gpioLine = os.Getenv(specificGpioLine)
+
+/*
+The service state is recorded right after the installation, before any test
+starts the service. The install-mode assertions therefore do not depend on the
+order in which the tests run.
+*/
+var servicesEnabledAfterInstall bool
+var servicesActiveAfterInstall bool
 
 // syncBuffer collects the output of a running command, which is written from
 // another goroutine while the test reads it.
@@ -97,6 +106,11 @@ func setup() (teardown func(), err error) {
 		return
 	}
 
+	// The snap declares install-mode: disable, so the service must not be
+	// running yet. This is recorded here because later tests start it.
+	servicesEnabledAfterInstall = utils.SnapServicesEnabled(nil, snapMatterPiGPIO)
+	servicesActiveAfterInstall = utils.SnapServicesActive(nil, snapMatterPiGPIO)
+
 	if err = utils.SnapConnect(nil, snapMatterPiGPIO+":avahi-control", ""); err != nil {
 		teardown()
 		return
@@ -151,7 +165,7 @@ func setupGPIO() error {
 
 		gpioChip, err = getMockGPIO()
 		if err != nil {
-			return fmt.Errorf("failed to get mock gpio chip number: %s", err)
+			return err
 		}
 		gpioLine = "4"
 
@@ -197,14 +211,56 @@ func runChipTool(t *testing.T, args string) string {
 	return stdout
 }
 
-// stopBlink terminates the test-blink process tree and returns the result of
-// waiting for it. The processes are started through sudo and therefore run as
-// root, so they cannot be signalled by the unprivileged test process itself.
-func stopBlink(t *testing.T, command *exec.Cmd, waitResult <-chan error) error {
+// Recent chip-tool versions report the OnOff attribute as TRUE/FALSE, older
+// ones as 1/0.
+var onOffAttributePattern = regexp.MustCompile(`(?i)OnOff:\s*(TRUE|FALSE|1|0)\b`)
+
+func parseOnOffAttribute(output string) (string, error) {
+	match := onOffAttributePattern.FindStringSubmatch(output)
+	if match == nil {
+		return "", fmt.Errorf("chip-tool did not report the OnOff attribute")
+	}
+
+	switch strings.ToUpper(match[1]) {
+	case "TRUE", "1":
+		return "on", nil
+	default:
+		return "off", nil
+	}
+}
+
+// readOnOffAttribute reads the OnOff attribute through chip-tool. The read is
+// retried because the application needs a moment to advertise itself again
+// after a restart.
+func readOnOffAttribute(t *testing.T) string {
+	t.Helper()
+
+	var value string
+	assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+		stdout, _, err := utils.Exec(nil, "sudo chip-tool onoff read on-off 110 1 2>&1")
+		_ = utils.WriteLogFile(t, chipToolSnap, stdout)
+		if !assert.NoError(collect, err) {
+			return
+		}
+
+		parsed, parseErr := parseOnOffAttribute(stdout)
+		if !assert.NoError(collect, parseErr) {
+			return
+		}
+		value = parsed
+	}, 60*time.Second, 2*time.Second)
+
+	return value
+}
+
+// stopBlink terminates the test-blink process tree and waits for it to exit.
+// The processes are started through sudo and therefore run as root, so they
+// cannot be signalled by the unprivileged test process itself.
+func stopBlink(t *testing.T, command *exec.Cmd, done <-chan struct{}) {
 	t.Helper()
 
 	if command.Process == nil {
-		return nil
+		return
 	}
 
 	// Setpgid makes the sudo PID the process group ID of the whole tree,
@@ -217,29 +273,33 @@ func stopBlink(t *testing.T, command *exec.Cmd, waitResult <-chan error) error {
 
 	signalGroup("TERM")
 	select {
-	case err := <-waitResult:
-		return err
+	case <-done:
+		return
 	case <-time.After(10 * time.Second):
 	}
 
 	signalGroup("KILL")
 	select {
-	case err := <-waitResult:
-		return err
+	case <-done:
 	case <-time.After(5 * time.Second):
 		t.Fatal("test-blink did not exit after being killed")
-		return nil
 	}
 }
 
 // runBlinkExpectingFailure runs test-blink and requires it to exit with an
 // error instead of blinking. The timeout prevents a job from hanging when the
 // expected failure does not occur.
+//
+// timeout is deliberately not given --foreground: in its default mode it puts
+// the command in its own process group and signals that whole group, so the
+// confined application is stopped together with "snap run" instead of being
+// orphaned while holding the GPIO line. --kill-after adds a SIGKILL for the
+// case where the group ignores SIGTERM.
 func runBlinkExpectingFailure(t *testing.T, reason string) string {
 	t.Helper()
 
 	var output bytes.Buffer
-	command := exec.Command("sudo", "timeout", "5s",
+	command := exec.Command("sudo", "timeout", "--kill-after=5s", "5s",
 		"snap", "run", snapMatterPiGPIO+".test-blink")
 	command.Stdout = &output
 	command.Stderr = &output
@@ -294,8 +354,10 @@ func TestPackagingAndInstallBehavior(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, stdout, "Usage")
 
-	assert.False(t, utils.SnapServicesEnabled(t, snapMatterPiGPIO))
-	assert.False(t, utils.SnapServicesActive(t, snapMatterPiGPIO))
+	assert.False(t, servicesEnabledAfterInstall,
+		"the snap declares install-mode: disable, so the service must not be enabled after installation")
+	assert.False(t, servicesActiveAfterInstall,
+		"the snap declares install-mode: disable, so the service must not be active after installation")
 }
 
 func TestInvalidGPIOLine(t *testing.T) {
@@ -316,7 +378,7 @@ When the GPIO is simulated, the line state itself is verified as well.
 */
 func TestBlinkOperation(t *testing.T) {
 	t.Run("WithoutGPIOInterface", func(t *testing.T) {
-		_, _, err := utils.Exec(nil, "sudo snap disconnect "+
+		_, _, err := utils.Exec(t, "sudo snap disconnect "+
 			snapMatterPiGPIO+":custom-gpio "+
 			snapMatterPiGPIO+":custom-gpio-dev")
 		assert.NoError(t, err)
@@ -346,16 +408,18 @@ func TestBlinkOperation(t *testing.T) {
 		return
 	}
 
-	waitResult := make(chan error, 1)
+	// waitErr is only read after done is closed, so no extra synchronisation
+	// is needed between the waiting goroutine and the test.
+	var waitErr error
+	done := make(chan struct{})
 	go func() {
-		waitResult <- command.Wait()
+		waitErr = command.Wait()
+		close(done)
 	}()
 
 	exited := func() bool {
 		select {
-		case err := <-waitResult:
-			// Put the result back for the caller of stopBlink.
-			waitResult <- err
+		case <-done:
 			return true
 		default:
 			return false
@@ -388,7 +452,7 @@ func TestBlinkOperation(t *testing.T) {
 
 	assert.False(t, exited(), "test-blink exited before the assertions completed")
 
-	waitErr := stopBlink(t, command, waitResult)
+	stopBlink(t, command, done)
 	assert.Error(t, waitErr, "test-blink should have been terminated by a signal")
 
 	stdout := output.String()
@@ -439,27 +503,37 @@ func TestWifiMatterCommander(t *testing.T) {
 		stdout = runChipTool(t, "onoff off 110 1")
 		assert.Contains(t, stdout, "Success status report received")
 		waitForGPIOState(t, "low")
-
-		stdout = runChipTool(t, "onoff read on-off 110 1")
-		assert.Contains(t, stdout, "OnOff")
+		assert.Equal(t, "off", readOnOffAttribute(t))
 
 		stdout = runChipTool(t, "onoff on 110 1")
 		assert.Contains(t, stdout, "Success status report received")
 		waitForGPIOState(t, "high")
+		assert.Equal(t, "on", readOnOffAttribute(t))
 
 		stdout = runChipTool(t, "onoff toggle 110 1")
 		assert.Contains(t, stdout, "Success status report received")
 		waitForGPIOState(t, "low")
 	})
 
+	/*
+		The OnOff attribute is persisted, so restarting the service must not
+		change the state of the light. Both the attribute and the GPIO line
+		have to come back with the value they had before the restart.
+	*/
 	t.Run("RestartPersistence", func(t *testing.T) {
+		// The light is left on, which differs from the power-up default, so
+		// that a restart which fails to restore the state is detectable.
+		stdout = runChipTool(t, "onoff on 110 1")
+		assert.Contains(t, stdout, "Success status report received")
+		waitForGPIOState(t, "high")
+
 		utils.SnapRestart(t, snapMatterPiGPIO)
 		assert.Eventually(t, func() bool {
 			return utils.SnapServicesActive(t, snapMatterPiGPIO)
 		}, 10*time.Second, 500*time.Millisecond)
 
-		stdout = runChipTool(t, "onoff on 110 1")
-		assert.Contains(t, stdout, "Success status report received")
+		assert.Equal(t, "on", readOnOffAttribute(t),
+			"the OnOff attribute must survive a restart")
 		waitForGPIOState(t, "high")
 	})
 }
