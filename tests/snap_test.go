@@ -513,6 +513,7 @@ func TestWifiMatterCommander(t *testing.T) {
 		stdout = runChipTool(t, "onoff toggle 110 1")
 		assert.Contains(t, stdout, "Success status report received")
 		waitForGPIOState(t, "low")
+		assert.Equal(t, "off", readOnOffAttribute(t))
 	})
 
 	/*
