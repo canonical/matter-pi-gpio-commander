@@ -29,8 +29,11 @@ const (
 const snapMatterPiGPIO = "matter-pi-gpio-commander"
 const chipToolSnap = "chip-tool"
 
-// Exit code used by the timeout command when it has to stop the program.
-const timeoutExitCode = 124
+// The daemon declared by the snap.
+const lightingService = snapMatterPiGPIO + ".lighting"
+
+// Exit code returned by test-blink on both of its expected failure paths.
+const blinkFailureExitCode = 1
 
 // A line offset that exists on neither a Raspberry Pi nor the simulator.
 const invalidGpioLine = "99"
@@ -43,8 +46,37 @@ The service state is recorded right after the installation, before any test
 starts the service. The install-mode assertions therefore do not depend on the
 order in which the tests run.
 */
-var servicesEnabledAfterInstall bool
-var servicesActiveAfterInstall bool
+var statusAfterInstall serviceStatus
+var statusAfterInstallErr error
+
+// serviceStatus holds the Startup and Current columns that "snap services"
+// reports for a single service.
+type serviceStatus struct {
+	startup string
+	current string
+}
+
+// readServiceStatus queries the state of a service in a single call. An error
+// is returned when the query fails or when the service is not listed, so that
+// a failed query cannot be mistaken for a disabled or inactive service.
+func readServiceStatus(service string) (serviceStatus, error) {
+	stdout, stderr, err := utils.Exec(nil, "snap services "+service)
+	if err != nil {
+		return serviceStatus{},
+			fmt.Errorf("query the state of %s: %w: %s", service, err, stderr)
+	}
+
+	for _, line := range strings.Split(stdout, "\n") {
+		fields := strings.Fields(line)
+		if len(fields) < 3 || fields[0] != service {
+			continue
+		}
+		return serviceStatus{startup: fields[1], current: fields[2]}, nil
+	}
+
+	return serviceStatus{},
+		fmt.Errorf("service %s is not listed in: %s", service, stdout)
+}
 
 // syncBuffer collects the output of a running command, which is written from
 // another goroutine while the test reads it.
@@ -108,8 +140,7 @@ func setup() (teardown func(), err error) {
 
 	// The snap declares install-mode: disable, so the service must not be
 	// running yet. This is recorded here because later tests start it.
-	servicesEnabledAfterInstall = utils.SnapServicesEnabled(nil, snapMatterPiGPIO)
-	servicesActiveAfterInstall = utils.SnapServicesActive(nil, snapMatterPiGPIO)
+	statusAfterInstall, statusAfterInstallErr = readServiceStatus(lightingService)
 
 	if err = utils.SnapConnect(nil, snapMatterPiGPIO+":avahi-control", ""); err != nil {
 		teardown()
@@ -310,8 +341,11 @@ func runBlinkExpectingFailure(t *testing.T, reason string) string {
 
 	var exitErr *exec.ExitError
 	if assert.ErrorAs(t, err, &exitErr, reason) {
-		assert.NotEqual(t, timeoutExitCode, exitErr.ExitCode(),
-			"test-blink kept running, but it should have failed: %s", reason)
+		// Both expected failure paths make test-blink exit with 1. Any other
+		// status, in particular timeout's 124 for SIGTERM or 137 for SIGKILL,
+		// means that the application kept running instead of failing.
+		assert.Equal(t, blinkFailureExitCode, exitErr.ExitCode(),
+			"test-blink did not exit with the expected failure status: %s", reason)
 	}
 	assert.NotContains(t, stdout, "Setting GPIO",
 		"test-blink toggled the line, but it should have failed: %s", reason)
@@ -354,10 +388,13 @@ func TestPackagingAndInstallBehavior(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, stdout, "Usage")
 
-	assert.False(t, servicesEnabledAfterInstall,
-		"the snap declares install-mode: disable, so the service must not be enabled after installation")
-	assert.False(t, servicesActiveAfterInstall,
-		"the snap declares install-mode: disable, so the service must not be active after installation")
+	if assert.NoError(t, statusAfterInstallErr,
+		"the state of the service right after the installation must be known") {
+		assert.Equal(t, "disabled", statusAfterInstall.startup,
+			"the snap declares install-mode: disable, so the service must not be enabled after installation")
+		assert.Equal(t, "inactive", statusAfterInstall.current,
+			"the snap declares install-mode: disable, so the service must not be active after installation")
+	}
 }
 
 func TestInvalidGPIOLine(t *testing.T) {
