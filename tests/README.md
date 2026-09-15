@@ -13,11 +13,27 @@ To run the tests, you must set the following environment variables:
 - `SNAP_CHANNEL`: The channel from which the snap will be downloaded. The default value is `latest/edge`. This is ignored when using a locally built snap.
 - `SNAP_PATH`: Path to the local snap to be tested instead of downloading from the store.
 - `TEARDOWN`: Remove snaps after tests. Useful to disable when running on CI machines. The default value is `true`.
-- `MOCK_GPIO`: Use gpio-mock to test the application instead of a physical gpiochip. The default value is `false`. The GPIO mocking logic works by modifying a local snap; the path to which must be set in `SNAP_PATH`.
+- `MOCK_GPIO`: Use a kernel `gpio-sim` device instead of a physical gpiochip. The default value is `false`. See [Simulated GPIO](#simulated-gpio) for the requirements.
 - `GPIO_CHIP`: The GPIO chip number; accepted values are `0` (for legacy Raspberry Pis) or `4` for the Raspberry Pi 5. This is ignored when mocking GPIO.
 - `GPIO_LINE`: This is the line offset to be used to test the selected gpiochip. The number of available lines can be checked with the `gpiodetect` and `gpioinfo` commands from the Debian package `gpiod`. This is ignored when mocking GPIO.
 
-Example, for running tests on a Raspberry Pi 4:
+### Simulated GPIO
+
+The snap is tested exactly as it is built, so its `custom-gpio-dev` slot only
+grants access to `/dev/gpiochip0` and `/dev/gpiochip4`. The simulated chip must
+therefore be assigned number 0 or 4, which only happens when the machine has no
+real GPIO chips of its own. In practice this means `MOCK_GPIO=true` works on a
+CI runner or a virtual machine, but not on a Raspberry Pi, where the simulated
+chip is created alongside the existing chips. `tests/gpio-mock.sh` fails with an
+explanatory message when the simulated chip gets an unusable number.
+
+On a Raspberry Pi, run the tests against the real GPIO by setting `GPIO_CHIP`
+and `GPIO_LINE` instead. The assertions on the simulated line state are then
+skipped automatically; the remaining tests check the application output.
+
+### Examples
+
+For running tests on a Raspberry Pi 4:
 
 ```bash
 GPIO_CHIP=0 \
@@ -29,6 +45,13 @@ where:
 - `-v` is to enable verbose output
 - `-failfast` makes the test stop after first failure
 - `-count 1` is to avoid Go test caching when repeating the unchanged tests, such when re-testing a rebuilt snap.
+
+For running tests with a simulated GPIO, on a machine without real GPIO chips:
+
+```bash
+MOCK_GPIO=true \
+go test -v -failfast -count 1
+```
 
 ## Run Thread tests
 
