@@ -68,8 +68,9 @@ jobs:
           EXPECTED: ${{ needs.build.outputs.commit }}
           CHANNEL: ${{ needs.build.outputs.channel }}
           GH_TOKEN: ${{ github.token }}
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ (github.ref == 'refs/heads/main' && secrets.STORE_LOGIN_MAIN) || (github.ref == 'refs/heads/dev' && secrets.STORE_LOGIN_DEV) || '' }}
         run: |
+          : "${SNAPCRAFT_STORE_CREDENTIALS:?Missing Store upload credential}"
           if [[ $BRANCH == dev && $GITHUB_RUN_ATTEMPT != 1 ]]; then
             echo "::error::Start a new weekly build instead of retrying an old upstream snapshot"; exit 1
           fi
@@ -119,8 +120,9 @@ jobs:
           REVISION: ${{ needs.test.outputs.revision }}
           DESTINATION: ${{ needs.build.outputs.destination }}
           GH_TOKEN: ${{ github.token }}
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ (github.ref == 'refs/heads/main' && secrets.STORE_LOGIN_STABLE) || (github.ref == 'refs/heads/dev' && secrets.STORE_LOGIN_DEV) || '' }}
         run: |
+          : "${SNAPCRAFT_STORE_CREDENTIALS:?Missing Store release credential}"
           if [[ $BRANCH == dev && $GITHUB_RUN_ATTEMPT != 1 ]]; then
             echo "::error::Start a new weekly build instead of promoting an old upstream snapshot"; exit 1
           fi
