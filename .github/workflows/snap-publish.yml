@@ -55,6 +55,7 @@ jobs:
   publish:
     name: Upload snap
     needs: build
+    environment: ${{ github.ref == 'refs/heads/main' && 'snap-candidate' || 'snap-weekly' }}
     runs-on: ubuntu-24.04-arm
     outputs:
       digest: ${{ steps.upload.outputs.digest }}
@@ -68,8 +69,9 @@ jobs:
           EXPECTED: ${{ needs.build.outputs.commit }}
           CHANNEL: ${{ needs.build.outputs.channel }}
           GH_TOKEN: ${{ github.token }}
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets[github.ref == 'refs/heads/main' && 'SNAP_STORE_LOGIN' || 'STORE_LOGIN'] }}
         run: |
+          : "${SNAPCRAFT_STORE_CREDENTIALS:?Missing Store upload credential}"
           if [[ $BRANCH == dev && $GITHUB_RUN_ATTEMPT != 1 ]]; then
             echo "::error::Start a new weekly build instead of retrying an old upstream snapshot"; exit 1
           fi
@@ -109,6 +111,7 @@ jobs:
   promote:
     name: Promote snap
     needs: [build, test]
+    environment: ${{ github.ref == 'refs/heads/main' && 'snap-stable' || 'snap-weekly' }}
     if: needs.build.outputs.destination != 'latest/stable' || vars.SNAP_PROMOTE_STABLE == 'true'
     runs-on: ubuntu-24.04-arm
     steps:
@@ -119,8 +122,9 @@ jobs:
           REVISION: ${{ needs.test.outputs.revision }}
           DESTINATION: ${{ needs.build.outputs.destination }}
           GH_TOKEN: ${{ github.token }}
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets[github.ref == 'refs/heads/main' && 'SNAP_STORE_LOGIN' || 'STORE_LOGIN'] }}
         run: |
+          : "${SNAPCRAFT_STORE_CREDENTIALS:?Missing Store release credential}"
           if [[ $BRANCH == dev && $GITHUB_RUN_ATTEMPT != 1 ]]; then
             echo "::error::Start a new weekly build instead of promoting an old upstream snapshot"; exit 1
           fi
