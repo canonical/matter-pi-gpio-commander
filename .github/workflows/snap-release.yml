@@ -1,4 +1,4 @@
-name: Snap release and canary
+name: Publish snap
 
 on:
   push:
@@ -18,7 +18,7 @@ env:
 
 jobs:
   build:
-    name: Build publishable snap (arm64)
+    name: Build snap
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
     runs-on: ubuntu-24.04-arm
     outputs:
@@ -53,7 +53,7 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Upload snap to Store
+    name: Upload snap
     needs: build
     runs-on: ubuntu-24.04-arm
     outputs:
@@ -82,7 +82,7 @@ jobs:
           snapcraft upload --release="$CHANNEL" "${files[0]}"
 
   test:
-    name: Test Store revision (arm64)
+    name: Test published snap
     needs: [build, publish]
     runs-on: ubuntu-24.04-arm
     outputs:
@@ -107,7 +107,7 @@ jobs:
           echo "Passed: $SNAP_NAME revision $revision ($EXPECTED_DIGEST)" >> "$GITHUB_STEP_SUMMARY"
 
   promote:
-    name: Promote tested Store revision
+    name: Promote snap
     needs: [build, test]
     if: needs.build.outputs.destination != 'latest/stable' || vars.SNAP_PROMOTE_STABLE == 'true'
     runs-on: ubuntu-24.04-arm

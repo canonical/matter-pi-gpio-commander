@@ -17,7 +17,7 @@ be merged before every release.
    rule off `dev`.
 2. `snap-pr.yml` checks that the release pin is still a tag, builds the arm64
    snap, and runs `.github/actions/test-snap` on the local artifact without
-   Store credentials. Make `Snap PR build and test (arm64)` a required check on `main`.
+   Store credentials. Make `PR build and test` a required check on `main`.
    Renovate may auto-merge a passing pin update; a failed one stays open.
 3. After merge, `snap-release.yml` builds the pinned `main` commit, publishes it to
    `latest/candidate`, and runs the shared suite on the Store install. Verify
@@ -79,7 +79,7 @@ No branch-sync bot, green-build tags, or integration App is needed.
 
 ### Repository settings and first run
 
-- Open the rollout PR normally. Once its first `Snap PR build and test (arm64)` check appears,
+- Open the rollout PR normally. Once its first `PR build and test` check appears,
   require that check from **GitHub Actions** in the `main` branch protection
   rule before merging. Keep the PR requirement and force-push protection.
   Protect `dev` similarly after creating it. Leave Actions workflow permissions
@@ -104,7 +104,7 @@ No branch-sync bot, green-build tags, or integration App is needed.
   Set `SNAP_PROMOTE_STABLE=true` for subsequent automatic promotions. To roll
   back, unset it, stop any in-flight stable promotion, and use the same release
   command with the previous known-good revision.
-- After `dev` exists, dispatch **Snap release and canary** with **Use workflow
+- After `dev` exists, dispatch **Publish snap** with **Use workflow
   from: dev**. Use a new dispatch rather than retrying an old weekly
   run. Enable personal GitHub Actions failure notifications for whoever monitors
   the canary. No schedule or Store publication is triggered by a push to `dev`.

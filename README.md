@@ -29,10 +29,6 @@ Please refer to
 to install and configure the application.
 
 ## Development
-Release updates are Renovate PRs into `main`. The weekly `dev` canary tests
-upstream `master` without affecting stable. See the [release workflow and
-rollout settings](AUTOMATED_SNAP_RELEASE_PLAN.md) for channels and recovery.
-
 Build:
 ```bash
 snapcraft -v
@@ -62,3 +58,4 @@ Then, run it via `sudo snap run matter-pi-gpio-commander.test-blink` snap comman
 ```bash
 sudo matter-pi-gpio-commander.test-blink
 ```
+

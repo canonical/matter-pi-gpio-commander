@@ -1,4 +1,4 @@
-name: Weekly snap canary
+name: Weekly canary
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   dispatch:
-    name: Dispatch canary on dev
+    name: Start canary
     runs-on: ubuntu-latest
     permissions:
       actions: write

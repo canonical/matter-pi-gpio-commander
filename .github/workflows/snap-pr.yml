@@ -1,4 +1,4 @@
-name: Snap PR validation
+name: PR build and test
 
 on:
   pull_request:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   build-and-test:
-    name: Snap PR build and test (arm64)
+    name: PR build and test
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
