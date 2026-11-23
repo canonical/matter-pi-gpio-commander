@@ -20,7 +20,7 @@ jobs:
   build:
     name: Build snap
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-26.04-arm
     outputs:
       commit: ${{ steps.source.outputs.commit }}
       artifact: ${{ steps.source.outputs.artifact }}
@@ -55,7 +55,7 @@ jobs:
   publish:
     name: Upload snap
     needs: build
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-26.04-arm
     outputs:
       digest: ${{ steps.upload.outputs.digest }}
     steps:
@@ -85,7 +85,7 @@ jobs:
   test:
     name: Test published snap
     needs: [build, publish]
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-26.04-arm
     outputs:
       revision: ${{ steps.verify.outputs.revision }}
     steps:
@@ -111,7 +111,7 @@ jobs:
     name: Promote snap
     needs: [build, test]
     if: needs.build.outputs.destination != 'latest/stable' || vars.SNAP_PROMOTE_STABLE == 'true'
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-26.04-arm
     steps:
       - run: sudo snap install snapcraft --classic
       - name: Release the tested revision
