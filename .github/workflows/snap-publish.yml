@@ -55,7 +55,6 @@ jobs:
   publish:
     name: Upload snap
     needs: build
-    environment: ${{ github.ref == 'refs/heads/main' && 'snap-candidate' || 'snap-weekly' }}
     runs-on: ubuntu-24.04-arm
     outputs:
       digest: ${{ steps.upload.outputs.digest }}
@@ -69,7 +68,7 @@ jobs:
           EXPECTED: ${{ needs.build.outputs.commit }}
           CHANNEL: ${{ needs.build.outputs.channel }}
           GH_TOKEN: ${{ github.token }}
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ (github.ref == 'refs/heads/main' && secrets.SNAP_STORE_LOGIN) || (github.ref == 'refs/heads/dev' && secrets.STORE_LOGIN) || '' }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ (github.ref == 'refs/heads/main' && secrets.STORE_LOGIN_MAIN) || (github.ref == 'refs/heads/dev' && secrets.STORE_LOGIN_DEV) || '' }}
         run: |
           : "${SNAPCRAFT_STORE_CREDENTIALS:?Missing Store upload credential}"
           if [[ $BRANCH == dev && $GITHUB_RUN_ATTEMPT != 1 ]]; then
@@ -111,7 +110,6 @@ jobs:
   promote:
     name: Promote snap
     needs: [build, test]
-    environment: ${{ github.ref == 'refs/heads/main' && 'snap-stable' || 'snap-weekly' }}
     if: needs.build.outputs.destination != 'latest/stable' || vars.SNAP_PROMOTE_STABLE == 'true'
     runs-on: ubuntu-24.04-arm
     steps:
@@ -122,7 +120,7 @@ jobs:
           REVISION: ${{ needs.test.outputs.revision }}
           DESTINATION: ${{ needs.build.outputs.destination }}
           GH_TOKEN: ${{ github.token }}
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ (github.ref == 'refs/heads/main' && secrets.SNAP_STORE_LOGIN) || (github.ref == 'refs/heads/dev' && secrets.STORE_LOGIN) || '' }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ (github.ref == 'refs/heads/main' && secrets.STORE_LOGIN_STABLE) || (github.ref == 'refs/heads/dev' && secrets.STORE_LOGIN_DEV) || '' }}
         run: |
           : "${SNAPCRAFT_STORE_CREDENTIALS:?Missing Store release credential}"
           if [[ $BRANCH == dev && $GITHUB_RUN_ATTEMPT != 1 ]]; then
