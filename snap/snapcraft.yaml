@@ -84,7 +84,7 @@ parts:
     plugin: nil
     source: https://github.com/project-chip/connectedhomeip.git
     source-depth: 1
-    source-tag: v1.5.1.0
+    source-branch: master
     source-submodules: []
     override-pull: |
       craftctl default
