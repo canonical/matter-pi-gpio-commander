@@ -1,0 +1,43 @@
+name: Test snap
+description: >
+  Runs the generic test suite against either a locally built snap or a snap
+  installed from a Store channel.
+
+inputs:
+  snap-path:
+    description: Path to a locally built snap. Takes precedence over snap-channel.
+    required: false
+    default: ""
+  snap-channel:
+    description: Store channel to install from when snap-path is empty.
+    required: false
+    default: ""
+  log-artifact:
+    description: Name of the artifact that receives the snap logs.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Go
+      uses: actions/setup-go@v7
+      with:
+        go-version: "1.*"
+        cache: false
+
+    - name: Run tests
+      working-directory: tests
+      shell: bash
+      env:
+        MOCK_GPIO: true
+        TEARDOWN: false
+        SNAP_PATH: ${{ inputs.snap-path }}
+        SNAP_CHANNEL: ${{ inputs.snap-channel }}
+      run: go test -failfast -p 1 -timeout 20m -v
+
+    - name: Upload snap logs
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.log-artifact }}
+        path: tests/logs/*.log

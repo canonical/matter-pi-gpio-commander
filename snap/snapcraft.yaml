@@ -1,5 +1,4 @@
 name: matter-pi-gpio-commander
-version: "2.0"
 summary: Raspberry Pi GPIO as a Matter lighting app
 description: Refer to https://snapcraft.io/matter-pi-gpio-commander
 adopt-info: connectedhomeip
@@ -85,16 +84,16 @@ parts:
     plugin: nil
     source: https://github.com/project-chip/connectedhomeip.git
     source-depth: 1
-    source-tag: master
+    source-tag: v1.5.1.0
     source-submodules: []
     override-pull: |
-
       craftctl default
-      # shallow clone the submodules
+      echo "connectedhomeip commit: $(git rev-parse HEAD)"
+      CHIP_REF=$(git describe --exact-match --tags --match 'v[0-9]*' 2> /dev/null || git rev-parse --short=7 HEAD)
+      LOCAL_REF=$(git -C "$CRAFT_PROJECT_DIR" rev-parse --short=7 HEAD)
+      VERSION="${CHIP_REF#v}+snap.$LOCAL_REF"
+      craftctl set version="$VERSION"
       scripts/checkout_submodules.py --shallow --platform linux
-      # add SDK's tag, fall back to the commit hash
-      CHIP_REF=$(git describe --exact-match --tags 2> /dev/null || git rev-parse --short HEAD)
-      craftctl set version=$(craftctl get version)+chip-$CHIP_REF
 
   lighting:
     after: [libgpiod, test-blink, connectedhomeip]

@@ -1,0 +1,45 @@
+name: Snap PR
+
+on:
+  pull_request:
+    branches: [main, dev]
+
+# Store credentials are never loaded here, because this workflow builds and
+# runs code from the pull request itself.
+permissions:
+  contents: read
+
+concurrency:
+  group: snap-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Verify upstream ref for target branch
+        env:
+          TARGET: ${{ github.base_ref }}
+        run: /usr/bin/python3 .github/scripts/check-chip-ref.py "$TARGET"
+
+      - name: Build snap
+        uses: snapcore/action-build@v1
+        id: snapcraft
+
+      - name: Upload snap
+        uses: actions/upload-artifact@v7
+        with:
+          name: matter-pi-gpio-commander_pr${{ github.event.pull_request.number }}-${{ github.run_number }}_arm64
+          path: ${{ steps.snapcraft.outputs.snap }}
+          if-no-files-found: error
+
+      - name: Test snap
+        uses: ./.github/actions/test-snap
+        with:
+          snap-path: ../${{ steps.snapcraft.outputs.snap }}
+          log-artifact: snap-logs_pr${{ github.event.pull_request.number }}-${{ github.run_id }}-${{ github.run_attempt }}
