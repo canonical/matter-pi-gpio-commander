@@ -28,8 +28,10 @@
 #include <app/clusters/software-diagnostics-server/software-fault-listener.h>
 #include <app/server/Server.h>
 #include <app/util/attribute-storage.h>
+#include <lib/core/CHIPSafeCasts.h>
 #include <platform/PlatformManager.h>
 
+#include <cstring>
 #include <string>
 
 using namespace chip;
@@ -219,7 +221,7 @@ void LightingAppCommandHandler::OnSoftwareFaultEventHandler(uint32_t eventId)
     char timeChar[50];
     if (std::strftime(timeChar, sizeof(timeChar), "%c", std::localtime(&result)))
     {
-        softwareFault.faultRecording.SetValue(ByteSpan::fromCharString(timeChar));
+        softwareFault.faultRecording.SetValue(ByteSpan(Uint8::from_const_char(timeChar), strlen(timeChar)));
     }
 
     Clusters::SoftwareDiagnostics::SoftwareFaultListener::GlobalNotifySoftwareFaultDetect(softwareFault);

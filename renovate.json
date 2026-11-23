@@ -1,6 +1,35 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base"
+    "config:recommended"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update the pinned Connected Home over IP release in the snap recipe",
+      "managerFilePatterns": [
+        "snap/snapcraft.yaml"
+      ],
+      "matchStrings": [
+        "source: https://github\\.com/(?<depName>project-chip/connectedhomeip)\\.git[\\s\\S]*?source-tag: (?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "loose"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Only follow four-part Connected Home over IP release tags, which excludes prereleases and the upstream test-event tags",
+      "matchDepNames": [
+        "project-chip/connectedhomeip"
+      ],
+      "matchBaseBranches": ["main"],
+      "allowedVersions": "/^v\\d+\\.\\d+\\.\\d+\\.\\d+$/",
+      "commitMessageTopic": "Connected Home over IP",
+      "separateMinorPatch": false,
+      "automerge": true,
+      "automergeType": "pr",
+      "ignoreUnstable": true
+    }
   ]
 }

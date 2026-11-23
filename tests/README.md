@@ -82,7 +82,7 @@ Additional environment variables needed for these tests:
 | REMOTE_SNAP_PATH | no       | latest/edge                     | Path to the snap file             |
 
 Example, for testing a locally built snap, available on the remote machine at
-`~/matter-pi-gpio-commander_2.0.0_arm64.snap`:
+`~/matter-pi-gpio-commander_1.5.1.0+snap.716d14a_arm64.snap`:
 
 ```bash
 REMOTE_HOST="192.168.178.95" \
@@ -91,7 +91,7 @@ REMOTE_PASSWORD="abcdef" \
 REMOTE_INFRA_IF="eth0" \
 REMOTE_GPIO_CHIP="0" \
 REMOTE_GPIO_LINE="16" \
-REMOTE_SNAP_PATH="~/matter-pi-gpio-commander_2.0.0_arm64.snap" \
+REMOTE_SNAP_PATH="~/matter-pi-gpio-commander_1.5.1.0+snap.716d14a_arm64.snap" \
 LOCAL_INFRA_IF="eno1" \
 go test -v -failfast -count 1 ./thread_tests
 ```

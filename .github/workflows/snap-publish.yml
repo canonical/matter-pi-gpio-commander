@@ -1,0 +1,130 @@
+name: Publish snap
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: snap-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  BRANCH: ${{ github.ref_name }}
+  SNAP_NAME: matter-pi-gpio-commander
+
+jobs:
+  build:
+    name: Build snap
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-24.04-arm
+    outputs:
+      commit: ${{ steps.source.outputs.commit }}
+      artifact: ${{ steps.source.outputs.artifact }}
+      channel: ${{ steps.source.outputs.channel }}
+      destination: ${{ steps.source.outputs.destination }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - id: source
+        run: |
+          /usr/bin/python3 .github/scripts/check-chip-ref.py "$BRANCH"
+          commit=$(git rev-parse HEAD)
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          echo "artifact=snap-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+          echo "Building $BRANCH at $commit" >> "$GITHUB_STEP_SUMMARY"
+          if [[ $BRANCH == main ]]; then
+            echo 'channel=latest/candidate' >> "$GITHUB_OUTPUT"
+            echo 'destination=latest/stable' >> "$GITHUB_OUTPUT"
+          else
+            echo 'channel=latest/edge' >> "$GITHUB_OUTPUT"
+            echo 'destination=latest/beta' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: snapcore/action-build@v1
+        id: snapcraft
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.source.outputs.artifact }}
+          path: ${{ steps.snapcraft.outputs.snap }}
+          if-no-files-found: error
+
+  publish:
+    name: Upload snap
+    needs: build
+    runs-on: ubuntu-24.04-arm
+    outputs:
+      digest: ${{ steps.upload.outputs.digest }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.build.outputs.artifact }}
+      - run: sudo snap install snapcraft --classic
+      - id: upload
+        env:
+          EXPECTED: ${{ needs.build.outputs.commit }}
+          CHANNEL: ${{ needs.build.outputs.channel }}
+          GH_TOKEN: ${{ github.token }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+        run: |
+          if [[ $BRANCH == dev && $GITHUB_RUN_ATTEMPT != 1 ]]; then
+            echo "::error::Start a new weekly build instead of retrying an old upstream snapshot"; exit 1
+          fi
+          head=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$BRANCH" --jq '.object.sha')
+          [[ $head == "$EXPECTED" ]] || { echo "::error::Superseded $BRANCH commit"; exit 1; }
+          files=(*.snap)
+          [[ ${#files[@]} == 1 && -f ${files[0]} ]]
+          digest=$(sha256sum "${files[0]}" | cut -d' ' -f1)
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          snapcraft upload --release="$CHANNEL" "${files[0]}"
+
+  test:
+    name: Test published snap
+    needs: [build, publish]
+    runs-on: ubuntu-24.04-arm
+    outputs:
+      revision: ${{ steps.verify.outputs.revision }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/test-snap
+        with:
+          snap-channel: ${{ needs.build.outputs.channel }}
+          log-artifact: store-tests-${{ github.run_attempt }}
+      - name: Verify installed Store artifact matches this upload
+        id: verify
+        env:
+          EXPECTED_DIGEST: ${{ needs.publish.outputs.digest }}
+        run: |
+          revision=$(snap list "$SNAP_NAME" | awk 'NR == 2 {print $3}')
+          [[ $revision =~ ^[0-9]+$ ]]
+          echo "$EXPECTED_DIGEST  /var/lib/snapd/snaps/${SNAP_NAME}_${revision}.snap" | sudo sha256sum --check
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+          echo "Passed: $SNAP_NAME revision $revision ($EXPECTED_DIGEST)" >> "$GITHUB_STEP_SUMMARY"
+
+  promote:
+    name: Promote snap
+    needs: [build, test]
+    if: needs.build.outputs.destination != 'latest/stable' || vars.SNAP_PROMOTE_STABLE == 'true'
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - run: sudo snap install snapcraft --classic
+      - name: Release the tested revision
+        env:
+          EXPECTED: ${{ needs.build.outputs.commit }}
+          REVISION: ${{ needs.test.outputs.revision }}
+          DESTINATION: ${{ needs.build.outputs.destination }}
+          GH_TOKEN: ${{ github.token }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+        run: |
+          if [[ $BRANCH == dev && $GITHUB_RUN_ATTEMPT != 1 ]]; then
+            echo "::error::Start a new weekly build instead of promoting an old upstream snapshot"; exit 1
+          fi
+          head=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$BRANCH" --jq '.object.sha')
+          [[ $head == "$EXPECTED" ]] || { echo "::error::Superseded $BRANCH commit"; exit 1; }
+          snapcraft status "$SNAP_NAME" --arch arm64 --track latest >> "$GITHUB_STEP_SUMMARY"
+          snapcraft release "$SNAP_NAME" "$REVISION" "$DESTINATION"
