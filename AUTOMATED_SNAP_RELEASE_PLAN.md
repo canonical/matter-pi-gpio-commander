@@ -17,7 +17,7 @@ be merged before every release.
    rule off `dev`.
 2. `snap-pr.yml` checks that the release pin is still a tag, builds the arm64
    snap, and runs `.github/actions/test-snap` on the local artifact without
-   Store credentials. Make `build-and-test` a required check on `main`.
+   Store credentials. Make `Snap PR build and test (arm64)` a required check on `main`.
    Renovate may auto-merge a passing pin update; a failed one stays open.
 3. After merge, `snap-release.yml` builds the pinned `main` commit, publishes it to
    `latest/candidate`, and runs the shared suite on the Store install. Verify
@@ -28,10 +28,9 @@ be merged before every release.
 ## Canary path: early warning, independent of stable
 
 1. Create `dev` from `main` and commit `source-branch: master` in place of the
-   release tag. Keep the weekly schedule in `snap-release.yml` on `main`:
-   GitHub runs schedules from the default branch, so explicitly check out
-   **this repository's `dev`**. Build its recipe without rewriting it. Provide
-   the same checkout on manual dispatch so a fix can be tried immediately.
+   release tag. The weekly schedule on `main` dispatches `snap-release.yml`
+   on `dev`. The build and tests run in the `dev` branch context at the event
+   SHA, just as for a manual dispatch on `dev`.
 2. If the arm64 build succeeds, publish it to `latest/edge` and run the shared
    suite on that revision. If the build fails, edge stays unchanged. If tests
    fail, the build stays on edge for diagnosis. Surface failures through
@@ -80,11 +79,12 @@ No branch-sync bot, green-build tags, or integration App is needed.
 
 ### Repository settings and first run
 
-- Open the rollout PR normally. Once its first `build-and-test` check appears,
+- Open the rollout PR normally. Once its first `Snap PR build and test (arm64)` check appears,
   require that check from **GitHub Actions** in the `main` branch protection
   rule before merging. Keep the PR requirement and force-push protection.
   Protect `dev` similarly after creating it. Leave Actions workflow permissions
-  read-only; no bot write token is needed by these workflows.
+  read-only by default; only the checkout-free scheduler requests `actions: write`
+  to dispatch the canary.
 - Confirm the Renovate GitHub App has repository access. Under **Settings →
   General → Pull Requests**, enable **Allow auto-merge** after the gate is
   working. If branch protection requires one approving review, Renovate must
@@ -104,7 +104,7 @@ No branch-sync bot, green-build tags, or integration App is needed.
   Set `SNAP_PROMOTE_STABLE=true` for subsequent automatic promotions. To roll
   back, unset it, stop any in-flight stable promotion, and use the same release
   command with the previous known-good revision.
-- After `dev` exists, dispatch **Snap release and canary** from `main` with
-  input `branch=dev`. Use a new dispatch rather than retrying an old weekly
+- After `dev` exists, dispatch **Snap release and canary** with **Use workflow
+  from: dev**. Use a new dispatch rather than retrying an old weekly
   run. Enable personal GitHub Actions failure notifications for whoever monitors
   the canary. No schedule or Store publication is triggered by a push to `dev`.

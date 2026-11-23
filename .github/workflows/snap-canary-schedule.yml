@@ -1,0 +1,16 @@
+name: Weekly snap canary
+
+on:
+  schedule:
+    - cron: '40 2 * * 1'
+
+jobs:
+  dispatch:
+    name: Dispatch canary on dev
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run snap-release.yml --repo "$GITHUB_REPOSITORY" --ref dev

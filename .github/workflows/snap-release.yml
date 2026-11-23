@@ -3,31 +3,23 @@ name: Snap release and canary
 on:
   push:
     branches: [main]
-  schedule:
-    - cron: '40 2 * * 1'
   workflow_dispatch:
-    inputs:
-      branch:
-        description: Branch to build
-        type: choice
-        options: [dev, main]
-        default: dev
-        required: true
 
 permissions:
   contents: read
 
 concurrency:
-  group: snap-publish-${{ github.event_name == 'push' && 'main' || inputs.branch || 'dev' }}
+  group: snap-publish-${{ github.ref }}
   cancel-in-progress: false
 
 env:
-  BRANCH: ${{ github.event_name == 'push' && 'main' || inputs.branch || 'dev' }}
+  BRANCH: ${{ github.ref_name }}
   SNAP_NAME: matter-pi-gpio-commander
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/main'
+    name: Build publishable snap (arm64)
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
     runs-on: ubuntu-24.04-arm
     outputs:
       commit: ${{ steps.source.outputs.commit }}
@@ -37,7 +29,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ env.BRANCH == 'main' && github.sha || 'refs/heads/dev' }}
           persist-credentials: false
       - id: source
         run: |
@@ -62,6 +53,7 @@ jobs:
           if-no-files-found: error
 
   publish:
+    name: Upload snap to Store
     needs: build
     runs-on: ubuntu-24.04-arm
     outputs:
@@ -90,6 +82,7 @@ jobs:
           snapcraft upload --release="$CHANNEL" "${files[0]}"
 
   test:
+    name: Test Store revision (arm64)
     needs: [build, publish]
     runs-on: ubuntu-24.04-arm
     outputs:
@@ -97,7 +90,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ needs.build.outputs.commit }}
           persist-credentials: false
       - uses: ./.github/actions/test-snap
         with:
@@ -115,6 +107,7 @@ jobs:
           echo "Passed: $SNAP_NAME revision $revision ($EXPECTED_DIGEST)" >> "$GITHUB_STEP_SUMMARY"
 
   promote:
+    name: Promote tested Store revision
     needs: [build, test]
     if: needs.build.outputs.destination != 'latest/stable' || vars.SNAP_PROMOTE_STABLE == 'true'
     runs-on: ubuntu-24.04-arm
