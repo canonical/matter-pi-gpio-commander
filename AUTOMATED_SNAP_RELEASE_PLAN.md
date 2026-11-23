@@ -1,4 +1,4 @@
-# Automated snap releases and weekly canary
+# Automated snap releases and weekly builds
 
 Routine upstream releases should need no maintainer action. `main` ships the
 latest Connected Home over IP release that passes this repository's tests.
@@ -25,7 +25,7 @@ be merged before every release.
    revision** to `latest/stable`. A failed build, upload, or test leaves stable
    unchanged.
 
-## Canary path: early warning, independent of stable
+## Weekly build: early warning, independent of stable
 
 1. Create `dev` from `main` and commit `source-branch: master` in place of the
    release tag. The weekly schedule on `main` dispatches `snap-release.yml`
@@ -36,20 +36,20 @@ be merged before every release.
    fail, the build stays on edge for diagnosis. Surface failures through
    GitHub Actions notifications; include the local and upstream commit SHAs
    when available and retain build/test logs.
-3. **Recommendation: keep `latest/beta` as the last passing canary.** On
+3. **Recommendation: keep `latest/beta` on the last passing weekly build.** On
    success, release the tested edge revision to beta; on failure, leave beta
    alone. If nobody uses beta, drop just this promotion step. The weekly test
-   and failure notification are what give the canary its value.
+   and failure notification still give maintainers early warning.
 
-A failed canary does not block a release PR: upstream may fix the problem
+A failed weekly build does not block a release PR: upstream may fix the problem
 before tagging a release, or the release may not contain the breaking change.
-A passing canary likewise does not replace testing the pinned release.
+A passing weekly build likewise does not replace testing the pinned release.
 
 ## When a compatibility fix is needed
 
 Land a focused fix and, where possible, a regression test on `dev`. Keep the
 fix separate from the branch's upstream-ref change so it can be cherry-picked.
-Run the canary manually to verify it.
+Trigger the weekly build manually to verify the fix.
 
 - **Works with the current release too:** cherry-pick the fix into a normal PR
   against `main`. Let Renovate handle the next pin bump as usual.
@@ -59,7 +59,7 @@ Run the canary manually to verify it.
 - **The release doesn't need it:** leave the fix on `dev`. Don't merge the
   entire branch or infer which fixes to ship from build history.
 
-Bring relevant changes from `main` back to `dev` as needed so the canary still
+Bring relevant changes from `main` back to `dev` as needed so the weekly build still
 exercises the shipping code. Preserve `source-branch: master` when doing so.
 No branch-sync bot, green-build tags, or integration App is needed.
 
@@ -84,7 +84,7 @@ No branch-sync bot, green-build tags, or integration App is needed.
   rule before merging. Keep the PR requirement and force-push protection.
   Protect `dev` similarly after creating it. Leave Actions workflow permissions
   read-only by default; only the checkout-free scheduler requests `actions: write`
-  to dispatch the canary.
+  to dispatch the weekly build.
 - Confirm the Renovate GitHub App has repository access. Under **Settings →
   General → Pull Requests**, enable **Allow auto-merge** after the gate is
   working. If branch protection requires one approving review, Renovate must
@@ -107,4 +107,4 @@ No branch-sync bot, green-build tags, or integration App is needed.
 - After `dev` exists, dispatch **Publish snap** with **Use workflow
   from: dev**. Use a new dispatch rather than retrying an old weekly
   run. Enable personal GitHub Actions failure notifications for whoever monitors
-  the canary. No schedule or Store publication is triggered by a push to `dev`.
+  the weekly build. No schedule or Store publication is triggered by a push to `dev`.

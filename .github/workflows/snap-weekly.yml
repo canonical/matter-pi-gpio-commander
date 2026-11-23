@@ -1,4 +1,4 @@
-name: Weekly canary
+name: Weekly build
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   dispatch:
-    name: Start canary
+    name: Start weekly build
     runs-on: ubuntu-latest
     permissions:
       actions: write

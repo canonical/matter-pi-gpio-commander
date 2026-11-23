@@ -71,7 +71,7 @@ jobs:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
         run: |
           if [[ $BRANCH == dev && $GITHUB_RUN_ATTEMPT != 1 ]]; then
-            echo "::error::Dispatch a fresh canary instead of retrying an old upstream snapshot"; exit 1
+            echo "::error::Start a new weekly build instead of retrying an old upstream snapshot"; exit 1
           fi
           head=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$BRANCH" --jq '.object.sha')
           [[ $head == "$EXPECTED" ]] || { echo "::error::Superseded $BRANCH commit"; exit 1; }
@@ -122,7 +122,7 @@ jobs:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
         run: |
           if [[ $BRANCH == dev && $GITHUB_RUN_ATTEMPT != 1 ]]; then
-            echo "::error::Dispatch a fresh canary instead of promoting an old upstream snapshot"; exit 1
+            echo "::error::Start a new weekly build instead of promoting an old upstream snapshot"; exit 1
           fi
           head=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$BRANCH" --jq '.object.sha')
           [[ $head == "$EXPECTED" ]] || { echo "::error::Superseded $BRANCH commit"; exit 1; }
