@@ -69,7 +69,7 @@ jobs:
           EXPECTED: ${{ needs.build.outputs.commit }}
           CHANNEL: ${{ needs.build.outputs.channel }}
           GH_TOKEN: ${{ github.token }}
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets[github.ref == 'refs/heads/main' && 'SNAP_STORE_LOGIN' || 'STORE_LOGIN'] }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ (github.ref == 'refs/heads/main' && secrets.SNAP_STORE_LOGIN) || (github.ref == 'refs/heads/dev' && secrets.STORE_LOGIN) || '' }}
         run: |
           : "${SNAPCRAFT_STORE_CREDENTIALS:?Missing Store upload credential}"
           if [[ $BRANCH == dev && $GITHUB_RUN_ATTEMPT != 1 ]]; then
@@ -122,7 +122,7 @@ jobs:
           REVISION: ${{ needs.test.outputs.revision }}
           DESTINATION: ${{ needs.build.outputs.destination }}
           GH_TOKEN: ${{ github.token }}
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets[github.ref == 'refs/heads/main' && 'SNAP_STORE_LOGIN' || 'STORE_LOGIN'] }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ (github.ref == 'refs/heads/main' && secrets.SNAP_STORE_LOGIN) || (github.ref == 'refs/heads/dev' && secrets.STORE_LOGIN) || '' }}
         run: |
           : "${SNAPCRAFT_STORE_CREDENTIALS:?Missing Store release credential}"
           if [[ $BRANCH == dev && $GITHUB_RUN_ATTEMPT != 1 ]]; then
