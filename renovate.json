@@ -29,6 +29,7 @@
       "separateMinorPatch": false,
       "automerge": true,
       "automergeType": "pr",
+      "platformAutomerge": false,
       "ignoreUnstable": true
     }
   ]
