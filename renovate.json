@@ -23,7 +23,6 @@
       "matchDepNames": [
         "project-chip/connectedhomeip"
       ],
-      "matchBaseBranches": ["main"],
       "allowedVersions": "/^v\\d+\\.\\d+\\.\\d+\\.\\d+$/",
       "commitMessageTopic": "Connected Home over IP",
       "separateMinorPatch": false,
